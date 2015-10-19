@@ -89,6 +89,8 @@ xtrabackup_read_metadata_from_db(void)
                     metadata_last_lsn= row[i] !=NULL? (long)row[i]:0;
                 case 4:
                     xtrabackup_compact = row[i] !=NULL? (long)row[i]:0;
+                case 5:
+
                 default:
                     tmpi=0;
 
