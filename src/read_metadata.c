@@ -202,4 +202,7 @@ int main(void)
     xtrabackup_read_metadata_from_db(metadata);
     
     create_full_backup_directory_and_metadata(metadata);
+
+    printf("%s %s\n",metadata->base_backup_directory,metadata->backup_directory_name);
+    exit(0);
 }
