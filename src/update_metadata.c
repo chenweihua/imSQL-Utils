@@ -188,7 +188,6 @@ int main(int argc,char **argv)
     memset(metadata->baseon_backup,0,512);
     metadata->extra_lsndir = (char *)malloc(sizeof(char)*512);
     memset(metadata->extra_lsndir,0,512);
-    memset(metadata->baseon_backup,0,512);
     metadata->metadata_from_lsn =0;
     metadata->metadata_to_lsn = 0;
     metadata->metadata_last_lsn = 0;
