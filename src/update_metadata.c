@@ -11,7 +11,10 @@ typedef struct metadata{
     long long metadata_to_lsn;
     long long metadata_last_lsn;
     int       xtrabackup_compact;
-    long long baseon_backup_id;
+    char *    base_backup_directory;
+    char *    backup_directory_name;
+    char *    baseon_backup;
+    char *    extra_lsndir;
 }META;
     
 
@@ -73,6 +76,27 @@ read_xtrabackup_checkpoint_file(char *base_backup_directory,char *backup_directo
     } else {
         metadata->xtrabackup_compact  = 0;
     }
+    if (fscanf(fp, "base_backup_directory = %s\n", metadata->base_backup_directory)
+                    != 1) {
+            r = FALSE;
+            goto end;
+    }
+    if (fscanf(fp, "backup_directory_name = %s\n", metadata->backup_directory_name)
+                    != 1) {
+            r = FALSE;
+            goto end;
+    }
+    if (fscanf(fp, "baseon_backup = %s\n", metadata->baseon_backup)
+                    != 1) {
+            r = FALSE;
+            goto end;
+    }
+    if (fscanf(fp, "extra_lsndir = %s\n", metadata->extra_lsndir)
+                    != 1) {
+            r = FALSE;
+            goto end;
+    }
+
 end:
     fclose(fp);
     free(chk);
@@ -94,7 +118,7 @@ xtrabackup_write_metadata_into_db(META *metadata)
     buf = (char *)malloc(sizeof(char)*2048);
     memset(buf,0,2048);
 
-    snprintf(buf,2047,"INSERT INTO sysadmin.t_xtra_backup_metadata(metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact) VALUES('%s',%lld,%lld,%lld,%lld)",metadata->metadata_type,(long long)metadata->metadata_from_lsn,(long long)metadata->metadata_to_lsn,(long long)metadata->metadata_last_lsn,(int)metadata->xtrabackup_compact);
+    snprintf(buf,2047,"INSERT INTO sysadmin.t_xtra_backup_metadata(metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir) VALUES('%s',%lld,%lld,%lld,%lld,'%s','%s','%s','%s')",metadata->metadata_type,(long long)metadata->metadata_from_lsn,(long long)metadata->metadata_to_lsn,(long long)metadata->metadata_last_lsn,(int)metadata->xtrabackup_compact,metadata->base_backup_directory,metadata->backup_directory_name,metadata->baseon_backup,metadata->extra_lsndir);
 
     //创建数据库连接参数
     static char *ipaddr = NULL;
@@ -156,11 +180,19 @@ int main(int argc,char **argv)
 
     metadata->metadata_type = (char *)malloc(sizeof(char)*128);
     memset(metadata->metadata_type,0,128);
+    metadata->base_backup_directory = (char *)malloc(sizeof(char)*512);
+    memset(metadata->base_backup_directory,0,512);
+    metadata->backup_directory_name = (char *)malloc(sizeof(char)*512);
+    memset(metadata->backup_directory_name,0,512);
+    metadata->baseon_backup = (char *)malloc(sizeof(char)*512);
+    memset(metadata->baseon_backup,0,512);
+    metadata->extra_lsndir = (char *)malloc(sizeof(char)*512);
+    memset(metadata->extra_lsndir,0,512);
+    memset(metadata->baseon_backup,0,512);
     metadata->metadata_from_lsn =0;
     metadata->metadata_to_lsn = 0;
     metadata->metadata_last_lsn = 0;
     metadata->xtrabackup_compact = 0;
-    metadata->baseon_backup_id = 0;
 
     read_xtrabackup_checkpoint_file(argv[1],argv[2],metadata);
 
