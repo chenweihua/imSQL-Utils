@@ -2,8 +2,9 @@ Name:ParateraDB-Utils
 Version:0.1
 Release:	1%{?dist}
 Summary:	
+    ParateraDB Utils tools.
 
-Group:		
+Group: ParateraDB	
 License:	
 URL:		
 Source0:	

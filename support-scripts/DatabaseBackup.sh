@@ -55,7 +55,7 @@ function dbbackup () {
 			if [ $? -eq 0 ];then
 			    local FBAKPATH=`cat $BKLDIR/"$CUR_DATE"_ICR.log|grep "Created backup directory"|awk '{print $5}'`
                 local BKRDIR=`echo $FBAKPATH|awk -F'/' '{print $NF}'`
-                $REGISTER $BKBDIR $BKRDIR "N"
+                $REGISTER $BKBDIR $BKRDIR $FULBKDIR
 			else
 				return 2
 			fi
