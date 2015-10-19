@@ -26,7 +26,7 @@ typedef struct metadata{
  *Date: 20151019PM1713
  *********************************************************************/
 static my_bool
-read_xtrabackup_checkpoint_file(char *base_backup_directory,char *backup_directory_name,META *metadata)
+read_xtrabackup_checkpoint_file(char *base_backup_directory,char *backup_directory_name,char *baseon_backup,META *metadata)
 {
     FILE *fp = NULL;
     my_bool  r = TRUE;
@@ -76,26 +76,11 @@ read_xtrabackup_checkpoint_file(char *base_backup_directory,char *backup_directo
     } else {
         metadata->xtrabackup_compact  = 0;
     }
-    if (fscanf(fp, "base_backup_directory = %s\n", metadata->base_backup_directory)
-                    != 1) {
-            r = FALSE;
-            goto end;
-    }
-    if (fscanf(fp, "backup_directory_name = %s\n", metadata->backup_directory_name)
-                    != 1) {
-            r = FALSE;
-            goto end;
-    }
-    if (fscanf(fp, "baseon_backup = %s\n", metadata->baseon_backup)
-                    != 1) {
-            r = FALSE;
-            goto end;
-    }
-    if (fscanf(fp, "extra_lsndir = %s\n", metadata->extra_lsndir)
-                    != 1) {
-            r = FALSE;
-            goto end;
-    }
+
+    snprintf(metadata->base_backup_directory,511,"%s",base_backup_directory);
+    snprintf(metadata->backup_directory_name,511,"%s",backup_directory_name);
+    snprintf(metadata->baseon_backup,511,"%s",baseon_backup);
+
 
 end:
     fclose(fp);
@@ -193,7 +178,7 @@ int main(int argc,char **argv)
     metadata->metadata_last_lsn = 0;
     metadata->xtrabackup_compact = 0;
 
-    read_xtrabackup_checkpoint_file(argv[1],argv[2],metadata);
+    read_xtrabackup_checkpoint_file(argv[1],argv[2],argv[3],metadata);
 
 
     res = xtrabackup_write_metadata_into_db(metadata);
