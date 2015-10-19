@@ -1,16 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <my_global.h>
-#include <mysql.h>
-
-static char * metadata_type;
-static long metadata_from_lsn;
-static long metadata_to_lsn;
-static long metadata_last_lsn;
-static long xtrabackup_compact;
-
+#include "metadata.h"
 
 /***********************************************************************
  *Read backup meata info from MySQL Database.
@@ -19,12 +7,10 @@ static long xtrabackup_compact;
  * Date:20151019PM1318
 */
 static my_bool
-xtrabackup_read_metadata_from_db(void)
+xtrabackup_read_metadata_from_db(META *metadata)
 {
 
     static int tmpi=0;
-    metadata_type = (char *)malloc(sizeof(char)*128);
-    memset(metadata_type,0,128);
 
     //创建数据库连接参数
     static char *ipaddr = NULL;
@@ -64,7 +50,7 @@ xtrabackup_read_metadata_from_db(void)
     unsigned int i;
 
     int mysql_query_res = 0;
-    mysql_query_res = mysql_query(conn,"SELECT metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact FROM sysadmin.t_xtra_backup_metadata WHERE metadata_type='full-backuped' and is_deleted = 0 ORDER BY id DESC LIMIT 1");
+    mysql_query_res = mysql_query(conn,"SELECT metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir FROM sysadmin.t_xtra_backup_metadata WHERE metadata_type='full-backuped' and is_deleted = 0 ORDER BY id DESC LIMIT 1");
     if(mysql_query_res != 0){
         return(FALSE);
     }
@@ -80,17 +66,23 @@ xtrabackup_read_metadata_from_db(void)
         {
             switch(i){
                 case 0:
-                    strncpy(metadata_type,row[i],127);
+                    strncpy(metadata->metadata_type,row[i],127);
                 case 1:
-                    metadata_from_lsn = row[i] !=NULL? (long)row[i]:0;
+                    metadata->metadata_from_lsn = row[i] !=NULL? (long)row[i]:0;
                 case 2:
-                    metadata_to_lsn = row[i] !=NULL? (long)row[i]:0;
+                    metadata->metadata_to_lsn = row[i] !=NULL? (long)row[i]:0;
                 case 3:
-                    metadata_last_lsn= row[i] !=NULL? (long)row[i]:0;
+                    metadata->metadata_last_lsn= row[i] !=NULL? (long)row[i]:0;
                 case 4:
-                    xtrabackup_compact = row[i] !=NULL? (long)row[i]:0;
+                    metadata->xtrabackup_compact = row[i] !=NULL? (long)row[i]:0;
                 case 5:
-
+                    strncpy(metadata->base_backup_directory,row[i],511);
+                case 6:
+                    strncpy(metadata->backup_directory_name,row[i],511);
+                case 7:
+                    strncpy(metadata->baseon_backup,row[i],511);
+                case 8:
+                    strncpy(metadata->extra_lsndir,row[i],511);
                 default:
                     tmpi=0;
 
@@ -100,8 +92,39 @@ xtrabackup_read_metadata_from_db(void)
     return(TRUE);
 }
 
+
+/***********************************************************************
+ *create full backup directory for incremental backup.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+static my_bool
+create_full_backup_directory_and_metadata(META *metadata)
+{
+}
+
 int main(void)
 {
-    xtrabackup_read_metadata_from_db();
-    printf("metadata_type=%s\nmetadata_from_lsn=%d\nmetadata_to_lsn=%d\n",metadata_type,metadata_from_lsn,metadata_to_lsn);
+    META *metadata = NULL;
+    metadata = (META *)malloc(sizeof(META));
+    memset(metadata,0,sizeof(META));
+
+    metadata->metadata_type = (char *)malloc(sizeof(char)*128);
+    memset(metadata->metadata_type,0,128);
+    metadata->base_backup_directory = (char *)malloc(sizeof(char)*512);
+    memset(metadata->base_backup_directory,0,512);
+    metadata->backup_directory_name = (char *)malloc(sizeof(char)*512);
+    memset(metadata->backup_directory_name,0,512);
+    metadata->baseon_backup = (char *)malloc(sizeof(char)*512);
+    memset(metadata->baseon_backup,0,512);
+    metadata->extra_lsndir = (char *)malloc(sizeof(char)*512);
+    memset(metadata->extra_lsndir,0,512);
+    metadata->metadata_from_lsn =0;
+    metadata->metadata_to_lsn = 0;
+    metadata->metadata_last_lsn = 0;
+    metadata->xtrabackup_compact = 0;
+
+    xtrabackup_read_metadata_from_db(metadata);
+    printf("metadata_type=%s\nmetadata_from_lsn=%d\nmetadata_to_lsn=%d\nbase_backup_directory=%s\nbackup_directory_name=%s\nbaseon_backup=%s\n",metadata->metadata_type,metadata->metadata_from_lsn,metadata->metadata_to_lsn,metadata->base_backup_directory,metadata->backup_directory_name,metadata->baseon_backup);
 }

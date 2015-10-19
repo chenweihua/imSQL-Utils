@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <my_global.h>
 #include <mysql.h>
 
