@@ -108,11 +108,17 @@ xtrabackup_print_metadata(META * metadata,char *buf, size_t buf_len)
             "from_lsn = %lld\n" 
             "to_lsn = %lld\n" 
             "last_lsn = %lld\n" 
+            "base_backup_directory = %s\n"
+            "backup_directory_name = %s\n"
+            "baseon_backup = %s\n"
             "compact = %d\n",
             metadata->metadata_type,
             metadata->metadata_from_lsn,
             metadata->metadata_to_lsn,
             metadata->metadata_last_lsn,
+            metadata->base_backup_directory,
+            metadata->backup_directory_name,
+            metadata->baseon_backup,
             metadata->xtrabackup_compact ==TRUE);
 }
 
