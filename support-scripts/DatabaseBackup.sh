@@ -33,7 +33,7 @@ function delete_old_binlog() {
 
 
 function dbbackup () {
-	if [ $DAYOFWEEK -ne 8 ];then
+	if [ $DAYOFWEEK -ne 2 ];then
 		innobackupex --defaults-file=$DEFAULTS_FILE --host $DBHOST --user $DBUSER --password $DBPASS --socket $DBSOCK --parallel=4 --throttle=400 --databases="mysql parafiledb karma parchdb parauser oits_mobile" $BKBDIR 2>$BKLDIR/"$CUR_DATE"_FUL.log 
 		if [ $? -eq 0 ];then
 			echo "$CUR_DATE"_FUL.log >$BKLDIR/fullbaklist.log
@@ -48,12 +48,14 @@ function dbbackup () {
 		fi
 		
 	else 
-		FULBKF=`cat $BKLDIR/fullbaklist.log`
-		FULBKDIR=`cat $BKLDIR/$FULBKF|tail -n 4|head -n 1|awk -F'/' '{print $4}'|awk -F"'" '{print $1}'`
+		FULBKBD=`/usr/bin/read_metadata|awk '{print $1}'`
+        FULBKDIR=`/usr/bin/read_metadata|awk '{print $2}'`
 		if [ -n $FULBKDIR ];then
-			innobackupex --defaults-file=$DEFAULTS_FILE --host $DBHOST --user $DBUSER --password $DBPASS --socket $DBSOCK --parallel=4 --throttle=400 --databases="mysql parafiledb parchdb karma parauser oits_mobile" --incremental $BKBDIR --incremental-basedir=$BKBDIR/$FULBKDIR 2>$BKLDIR/"$CUR_DATE"_ICR.log
+			innobackupex --defaults-file=$DEFAULTS_FILE --host $DBHOST --user $DBUSER --password $DBPASS --socket $DBSOCK --parallel=4 --throttle=400 --databases="mysql parafiledb parchdb karma parauser oits_mobile" --incremental $BKBDIR --incremental-basedir=$FULBKBD/$FULBKDIR 2>$BKLDIR/"$CUR_DATE"_ICR.log
 			if [ $? -eq 0 ];then
-				echo "$FULBKF -> $CUR_DATE"_ICR.log >>$BKLDIR/incrbaklist.log
+			    local FBAKPATH=`cat $BKLDIR/"$CUR_DATE"_ICR.log|grep "Created backup directory"|awk '{print $5}'`
+                local BKRDIR=`echo $FBAKPATH|awk -F'/' '{print $NF}'`
+                $REGISTER $BKBDIR $BKRDIR "N"
 			else
 				return 2
 			fi
