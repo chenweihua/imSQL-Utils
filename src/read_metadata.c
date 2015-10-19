@@ -64,7 +64,7 @@ xtrabackup_read_metadata_from_db(void)
     unsigned int i;
 
     int mysql_query_res = 0;
-    mysql_query_res = mysql_query(conn,"SELECT metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact FROM sysadmin.t_xtra_backup_metadata WHERE is_deleted = 0 ORDER BY id DESC LIMIT 1");
+    mysql_query_res = mysql_query(conn,"SELECT metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact FROM sysadmin.t_xtra_backup_metadata WHERE metadata_type='full-backuped' and is_deleted = 0 ORDER BY id DESC LIMIT 1");
     if(mysql_query_res != 0){
         return(FALSE);
     }
