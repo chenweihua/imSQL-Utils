@@ -1,14 +1,18 @@
 #!/bin/bash
 
+set -e 
+set -x
+
 readonly DEFAULTS_FILE='/etc/my.cnf'
 readonly DBHOST='localhost'
 readonly DBUSER='root'
-readonly DBPASS='111111'
+readonly DBPASS='k7e3h8q4'
 readonly DBSOCK='/var/lib/mysql/mysql.sock'
 readonly BKBDIR='/Database/Backup/PhysicalBackup/'
 readonly BKLDIR='/Database/Backup/BackupLogs/'
 readonly CUR_DATE=`date +'%Y%m%d%H%M%S'`
 readonly DAYOFWEEK=`date +'%u'`
+readonly REGISTER='/usr/bin/registe_metadata'
 
 function sql_query() {
         #执行mysql -h xxx -u xxx -pxxx -S xxx -e xxx
@@ -34,8 +38,11 @@ function dbbackup () {
 		if [ $? -eq 0 ];then
 			echo "$CUR_DATE"_FUL.log >$BKLDIR/fullbaklist.log
 			local FBAKPATH=`cat $BKLDIR/"$CUR_DATE"_FUL.log|grep "Created backup directory"|awk '{print $5}'`
+            local BKRDIR=`echo $FBAKPATH|awk -F'/' '{print $NF}'`
 			#delete archlog.
 			delete_old_binlog $FBAKPATH
+            #registe metadata into database.
+            $REGISTER $BKBDIR $BKRDIR "N"
 		else
 			return 1
 		fi
