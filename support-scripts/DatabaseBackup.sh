@@ -12,7 +12,8 @@ readonly BKBDIR='/Database/Backup/PhysicalBackup/'
 readonly BKLDIR='/Database/Backup/BackupLogs/'
 readonly CUR_DATE=`date +'%Y%m%d%H%M%S'`
 readonly DAYOFWEEK=`date +'%u'`
-readonly REGISTER='/usr/bin/registe_metadata'
+readonly REGISTER='/opt/pdb/bin/registe_metadata'
+readonly READER='/opt/pdb/bin/read_metadata'
 
 function sql_query() {
         #执行mysql -h xxx -u xxx -pxxx -S xxx -e xxx
@@ -48,8 +49,8 @@ function dbbackup () {
 		fi
 		
 	else 
-		FULBKBD=`/usr/bin/read_metadata|awk '{print $1}'`
-        FULBKDIR=`/usr/bin/read_metadata|awk '{print $2}'`
+		FULBKBD=`$READER|awk '{print $1}'`
+        FULBKDIR=`$READER|awk '{print $2}'`
 		if [ -n $FULBKDIR ];then
 			innobackupex --defaults-file=$DEFAULTS_FILE --host $DBHOST --user $DBUSER --password $DBPASS --socket $DBSOCK --parallel=4 --throttle=400 --databases="mysql parafiledb parchdb karma parauser oits_mobile" --incremental $BKBDIR --incremental-basedir=$FULBKBD/$FULBKDIR 2>$BKLDIR/"$CUR_DATE"_ICR.log
 			if [ $? -eq 0 ];then
