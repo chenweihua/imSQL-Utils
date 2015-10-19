@@ -60,36 +60,60 @@ xtrabackup_read_metadata_from_db(META *metadata)
         return(FALSE);
     }
 
-    if((row = mysql_fetch_row(res)) != NULL)
-    {
-        for(i=0;i<mysql_num_fields(res);i++)
-        {
-            switch(i){
-                case 0:
-                    strncpy(metadata->metadata_type,row[i],127);
-                case 1:
-                    metadata->metadata_from_lsn = row[i] !=NULL? (long)row[i]:0;
-                case 2:
-                    metadata->metadata_to_lsn = row[i] !=NULL? (long)row[i]:0;
-                case 3:
-                    metadata->metadata_last_lsn= row[i] !=NULL? (long)row[i]:0;
-                case 4:
-                    metadata->xtrabackup_compact = row[i] !=NULL? (long)row[i]:0;
-                case 5:
-                    strncpy(metadata->base_backup_directory,row[i],511);
-                case 6:
-                    strncpy(metadata->backup_directory_name,row[i],511);
-                case 7:
-                    strncpy(metadata->baseon_backup,row[i],511);
-                case 8:
-                    strncpy(metadata->extra_lsndir,row[i],511);
-                default:
-                    tmpi=0;
+    row = mysql_fetch_row(res);
 
-                }
-         }
+    for(i=0;i<mysql_num_fields(res);i++)
+    {
+        switch(i){
+            case 0:
+                sprintf(metadata->metadata_type,"%s",row[i]);
+            case 1:
+                metadata->metadata_from_lsn = (row[i] !=NULL? atoll(row[i]):0);
+            case 2:
+                metadata->metadata_to_lsn = (row[i] !=NULL? atoll(row[i]):0);
+            case 3:
+                metadata->metadata_last_lsn= (row[i] !=NULL? atoll(row[i]):0);
+            case 4:
+                metadata->xtrabackup_compact = (row[i] !=NULL? atoll(row[i]):0);
+            case 5:
+                snprintf(metadata->base_backup_directory,511,row[i]);
+            case 6:
+                snprintf(metadata->backup_directory_name,511,row[i]);
+            case 7:
+                snprintf(metadata->baseon_backup,511,row[i]);
+            case 8:
+                snprintf(metadata->extra_lsndir,511,row[i]);
+            default:
+                tmpi=0;
+
+        }
     }
     return(TRUE);
+}
+
+/***********************************************************************
+ *make metadata buffer.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+static
+void
+xtrabackup_print_metadata(META * metadata,char *buf, size_t buf_len)
+{
+    /* Use UINT64PF instead of LSN_PF here, as we have to maintain the file
+     *     format. */
+    snprintf(buf, buf_len,
+            "backup_type = %s\n"
+            "from_lsn = %lld\n" 
+            "to_lsn = %lld\n" 
+            "last_lsn = %lld\n" 
+            "compact = %d\n",
+            metadata->metadata_type,
+            metadata->metadata_from_lsn,
+            metadata->metadata_to_lsn,
+            metadata->metadata_last_lsn,
+            metadata->xtrabackup_compact ==TRUE);
 }
 
 
@@ -102,6 +126,50 @@ xtrabackup_read_metadata_from_db(META *metadata)
 static my_bool
 create_full_backup_directory_and_metadata(META *metadata)
 {
+
+    int len = 0;
+    FILE *fp = NULL;
+
+    static char *full_backup_directory = NULL;
+    static char *full_backup_metadata_file = NULL;
+    static char *buf = NULL;
+    full_backup_directory = (char *)malloc(sizeof(char)*512);
+    memset(full_backup_directory,0,512);
+    full_backup_metadata_file= (char *)malloc(sizeof(char)*512);
+    memset(full_backup_metadata_file,0,512);
+    buf = (char *)malloc(sizeof(char)*2048);
+    memset(buf,0,2048);
+
+    snprintf(full_backup_directory,511,"%s/%s",metadata->base_backup_directory,metadata->backup_directory_name);
+    snprintf(full_backup_metadata_file,511,"%s/xtrabackup_checkpoints",full_backup_directory);
+
+
+    umask(S_IWGRP | S_IWOTH);
+
+    mkdir(full_backup_directory,0777);
+
+    xtrabackup_print_metadata(metadata,buf,2047);
+
+    len = strlen(buf);
+
+    fp = fopen(full_backup_metadata_file, "w");
+    if(!fp) {
+        perror("fopen()");
+        return(FALSE);
+    }
+    if (fwrite(buf, len, 1, fp) < 1) {
+        fclose(fp);
+        return(FALSE);
+    }
+
+    free(full_backup_directory);
+    free(full_backup_metadata_file);
+    free(buf);
+
+    fclose(fp);
+
+    return(TRUE);
+
 }
 
 int main(void)
@@ -126,5 +194,6 @@ int main(void)
     metadata->xtrabackup_compact = 0;
 
     xtrabackup_read_metadata_from_db(metadata);
-    printf("metadata_type=%s\nmetadata_from_lsn=%d\nmetadata_to_lsn=%d\nbase_backup_directory=%s\nbackup_directory_name=%s\nbaseon_backup=%s\n",metadata->metadata_type,metadata->metadata_from_lsn,metadata->metadata_to_lsn,metadata->base_backup_directory,metadata->backup_directory_name,metadata->baseon_backup);
+    
+    create_full_backup_directory_and_metadata(metadata);
 }
