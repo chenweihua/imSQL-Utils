@@ -10,7 +10,7 @@ Source0:    https://git.paratera.net/dba/%{name}-%{version}.tar.gz
 
 
 BuildRequires: coreutils grep procps shadow-utils gcc-c++ gperf ncurses-devel perl readline-devel time zlib-devel libaio-devel bison cmake make automake	
-Requires: mailx tar openssl grep coreutils procps shadow-utils perl time pigz percona-xtrabackup ParateraDB-Server-server-56 ParateraDB-Server-client-56	
+Requires: mailx tar openssl grep coreutils procps shadow-utils perl time pigz ParateraDB-Backup ParateraDB-Server-server-56 ParateraDB-Server-client-56	
 
 %description
     ParateraDB Utils Tools.
