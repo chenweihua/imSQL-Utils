@@ -5,8 +5,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <my_global.h>
-#include <mysql.h>
+#include <mysql/my_global.h>
+#include <mysql/mysql.h>
 
 typedef struct metadata{
     char *    metadata_type;

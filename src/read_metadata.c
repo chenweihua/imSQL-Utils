@@ -62,31 +62,37 @@ xtrabackup_read_metadata_from_db(META *metadata)
 
     row = mysql_fetch_row(res);
 
-    for(i=0;i<mysql_num_fields(res);i++)
-    {
-        switch(i){
-            case 0:
-                sprintf(metadata->metadata_type,"%s",row[i]);
-            case 1:
-                metadata->metadata_from_lsn = (row[i] !=NULL? atoll(row[i]):0);
-            case 2:
-                metadata->metadata_to_lsn = (row[i] !=NULL? atoll(row[i]):0);
-            case 3:
-                metadata->metadata_last_lsn= (row[i] !=NULL? atoll(row[i]):0);
-            case 4:
-                metadata->xtrabackup_compact = (row[i] !=NULL? atoll(row[i]):0);
-            case 5:
-                snprintf(metadata->base_backup_directory,511,row[i]);
-            case 6:
-                snprintf(metadata->backup_directory_name,511,row[i]);
-            case 7:
-                snprintf(metadata->baseon_backup,511,row[i]);
-            case 8:
-                snprintf(metadata->extra_lsndir,511,row[i]);
-            default:
-                tmpi=0;
+    if(row != NULL){
 
+        for(i=0;i<mysql_num_fields(res);i++)
+        {
+            switch(i){
+                case 0:
+                    sprintf(metadata->metadata_type,"%s",row[i]);
+                case 1:
+                    metadata->metadata_from_lsn = (row[i] !=NULL? atoll(row[i]):0);
+                case 2:
+                    metadata->metadata_to_lsn = (row[i] !=NULL? atoll(row[i]):0);
+                case 3:
+                    metadata->metadata_last_lsn= (row[i] !=NULL? atoll(row[i]):0);
+                case 4:
+                    metadata->xtrabackup_compact = (row[i] !=NULL? atoll(row[i]):0);
+                case 5:
+                    snprintf(metadata->base_backup_directory,511,row[i]);
+                case 6:
+                    snprintf(metadata->backup_directory_name,511,row[i]);
+                case 7:
+                    snprintf(metadata->baseon_backup,511,row[i]);
+                case 8:
+                    snprintf(metadata->extra_lsndir,511,row[i]);
+                default:
+                    tmpi=0;
+
+            }
         }
+    }
+    else{
+        return(FALSE);
     }
     return(TRUE);
 }
