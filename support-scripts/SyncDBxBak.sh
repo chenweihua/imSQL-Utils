@@ -16,7 +16,7 @@ function sync_database_backup_files() {
 	cd $BASEPATH
 	
 	#Mount Filesystem.	
-	./NfsMount.sh 1
+	/opt/pdb/bin/NfsMount 1
 
 	if [ -x /usr/bin/rsync ];then
 		if [ -n $BDIR ];then
@@ -29,7 +29,7 @@ function sync_database_backup_files() {
 	fi
 
 	#Unmount Filesystem
-	./NfsMount.sh 0
+	/opt/pdb/bin/NfsMount 0
 
 	return $ret
 
