@@ -18,6 +18,9 @@
 --
 -- Table structure for table `t_xtra_backup_metadata`
 --
+create database sysadmin default character set utf8 default collate utf8_general_ci;
+
+use sysadmin;
 
 DROP TABLE IF EXISTS `t_xtra_backup_metadata`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
