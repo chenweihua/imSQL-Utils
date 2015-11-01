@@ -19,8 +19,10 @@ function sync_database_backup_files() {
 	/usr/bin/NfsMount 1
 
 	if [ -x /usr/bin/rsync ];then
-		if [ -n $BDIR ];then
+		if [[ $BDIR != '' ]];then
 			/usr/bin/rsync -avoug --progress --exclude $BDIR $SPATH $DPATH
+        else
+			/usr/bin/rsync -avoug --progress $SPATH $DPATH
 		fi
 		ret=$?
 	else
