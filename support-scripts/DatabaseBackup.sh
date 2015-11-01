@@ -13,8 +13,8 @@ readonly BKLDIR='/Database/Backup/BackupLogs/'
 readonly CUR_DATE=`date +'%Y%m%d%H%M%S'`
 readonly DAYOFWEEK=`date +'%u'`
 readonly DAYOFMONTH=`date +'%d'`
-readonly REGISTER='/opt/pdb/bin/registe_metadata'
-readonly READER='/opt/pdb/bin/read_metadata'
+readonly REGISTER='/usr/bin/registe_metadata'
+readonly READER='/usr/bin/read_metadata'
 
 function sql_query() {
         #执行mysql -h xxx -u xxx -pxxx -S xxx -e xxx
