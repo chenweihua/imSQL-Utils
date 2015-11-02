@@ -220,6 +220,22 @@ int main(int argc,char **argv){
         printf("Usage: ./test backup|restore|history ...\n");
         exit(1); 
     };
+
+    //initialize innobak instance;
+    INNOBAK *innobak;
+    innobak = (INNOBAK *)malloc(sizeof(INNOBAK));
+    innobak->innobak_bin = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    innobak->stream = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    innobak->compress = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    innobak->use_memory = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+
+    memset(innobak->innobak_bin,0,DFTLENGTH/4);
+    memset(innobak->stream,0,DFTLENGTH/4);
+    memset(innobak->compress,0,DFTLENGTH/4);
+    memset(innobak->use_memory,0,DFTLENGTH/4);
+    innobak->compress_threads=4;
+    innobak->parallel = 4;
+    innobak->throttle = 500;
     
     //initialize dbp instance.
     dbp = (DBP *)malloc(sizeof(DBP));
