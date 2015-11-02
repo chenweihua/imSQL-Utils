@@ -25,6 +25,16 @@ typedef struct params{
     char * content;
 }PARA;
 
+typedef struct innobak{
+    char *innobak_bin;
+    char *stream;
+    char *compress;
+    int compress_threads;
+    int parallel;
+    int throttle;
+    char *use_memory;
+}INNOBAK;
+
 int parse_database_conn_params(char *,DBP *);
 int backup_database(PARA *,DBP *);
 int restore_database(PARA *);
