@@ -44,6 +44,58 @@ end:
 }
 
 /***********************************************************************
+ * save innobackupex params informations informations into DBP struct.
+ *@return TRUE on success,FALSE on failure.
+ * Author:  Tian, Lei [tianlei@paratera.com]
+ * Date:    20151019PM1318
+*/
+int parse_innobackupex_params(char *filename,INNOBAK *innobak){
+    FILE *fp = NULL;
+    int res = 0;
+    char *ikey;
+    char *ivalues;
+
+    ikey = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    ivalues = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    memset(ikey,0,DFTLENGTH/4);
+    memset(ivalues,0,DFTLENGTH/4);
+
+    fp = fopen(filename,"r");
+    if(fp == NULL){
+        perror("fopen()");
+        res = 1;
+        return(res);
+    }
+
+    while(fscanf(fp,"%s = %s\n",ikey,ivalues) != 1){
+        if(strstr("innobak_bin",ikey) != NULL){
+            innobak->innobak_bin = ivalues;
+        }
+        if(strstr("stream",ikey) != NULL){
+            innobak->stream = ivalues;
+        }
+        if(strstr("compress",ikey) != NULL){
+            innobak->compress = ivalues;
+        }
+        if(strstr("compress_threads",ikey) != NULL){
+            innobak->compress_threads = ivalues;
+        }
+        if(strstr("parallel",ikey) != NULL){
+            innobak->parallel = ivalues;
+        }
+        if(strstr("throttle",ikey) != NULL){
+            innobak->throttle = ivalues;
+        }
+        if(strstr("use_memory",ikey) != NULL){
+            innobak->use_memory = ivalues;
+        }
+    }
+end:
+    fclose(fp);
+    return(res);
+}
+
+/***********************************************************************
  * connection pdb server.
  *@return TRUE on success,FALSE on failure.
  * Author: Tian, Lei [tianlei@paratera.com]
