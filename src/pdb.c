@@ -78,6 +78,8 @@ int operate_database_history(PARA *para){
  * Date:20151019PM1318
 */
 int pdb_shell(DBP *dbp){
+    int res = 0;
+    int exeres = 0;
 
     static int res = 0;
     static char *connhost = NULL;
@@ -106,9 +108,15 @@ int pdb_shell(DBP *dbp){
         snprintf(connsocket,DFTLENGTH/2,"-S%s",dbp->socket);
         snprintf(connport,DFTLENGTH/4,"-P%d",dbp->port);
         //execute /usr/bin/mysql.
-        execlp("/usr/bin/mysql","mysql",connhost,connuser,connpass,connport,NULL);
+        exeres = execlp("/usr/bin/mysql","mysql",connhost,connuser,connpass,connport,NULL);
+        if(exeres = -1){
+            res = 2;
+        }
     }
-    
+    else{
+        res = 1;
+    }
+    return(res);
 }
 
 //main function.
