@@ -182,23 +182,40 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
 
     if(strstr(para[2].content,"db") || strstr(para[2].content,"database")){
         if(strlen(para[3].content) != 0){
-            snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-            cres = connection_pdb_server(dbp,res,&row,query);
-            if(cres == 0){
-                if(atoi(row[0]) == 1){
-                    snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s . >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream);
-                    i=system(innobackupex);
-                    if(i == 0){
-                        printf("Backup Success!\n");
+            if(strstr(para[4].content,"online")){
+                if(strstr(para[5].content,"compress")){
+                    if(strstr(para[6].content,"includelogs")){
+                    snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
+                    cres = connection_pdb_server(dbp,res,&row,query);
+
+                    if(cres == 0){
+                        if(atoi(row[0]) == 1){
+                            snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s . >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream);
+                            i=system(innobackupex);
+                            if(i == 0){
+                                printf("Backup Success!\n");
+                            }
+                            else{
+                                printf("Backup Failure!\n");
+                            }
+                        }else{
+                            printf("No %s\n",para[3].content);
+                        }
+                    }
                     }
                     else{
-                        printf("Backup Failure!\n");
+                        printf("para[6].content=%s\n",para[6].content);
                     }
-                }else{
-                    printf("No %s\n",para[3].content);
+                }
+                else{
+                    printf("para[5].content=%s\n",para[5].content);
                 }
             }
-        }else{
+            else{
+                printf("para[4].content=%s\n",para[4].content);
+            }
+        }
+        else{
             printf("para[2].content=%s\n",para[2].content);
         }
     }
