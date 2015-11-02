@@ -22,7 +22,7 @@ typedef struct dbparams{
 
 typedef struct params{
     int pos;
-    int length;
+    int argclen;
     char * content;
 }PARA;
 

@@ -361,7 +361,7 @@ int main(int argc,char **argv){
     for(i=0;i<argc;i++){
         para[i].content = (char *)malloc(sizeof(char)*128);
         memset(para[i].content,0,128);
-        para[i].length = strlen(argv[i]);
+        para[i].argclen = argc-1;
         para[i].pos = i; 
         sprintf(para[i].content,"%s",argv[i]);
     }
