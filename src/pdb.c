@@ -1,43 +1,50 @@
 #include "pdb.h"
 
 /***********************************************************************
- *parse database connection params informations.
+ *parse database connection params informations,save informations into DBP struct.
  *@return TRUE on success,FALSE on failure.
  * Author:  Tian, Lei [tianlei@paratera.com]
  * Date:    20151019PM1318
 */
 int parse_database_conn_params(char *filename,DBP *dbp){
     FILE *fp = NULL;
-
+    int res = 0;
 
     fp = fopen(filename,"r");
     if(fp == NULL){
         perror("fopen()");
-        return(1);
+        res = 1;
+        return(res);
     }
 
     if(fscanf(fp,"host = %s\n",dbp->host) != 1){
+        res = 21;
         goto end;
     }
     if(fscanf(fp,"user = %s\n",dbp->user) != 1){
+        res = 22;
         goto end;
     }
     if(fscanf(fp,"socket = %s\n",dbp->socket) != 1){
+        res = 23;
         goto end;
     }
     if(fscanf(fp,"pass = %s\n",dbp->pass) != 1){
+        res = 24;
         goto end;
     }
     if(fscanf(fp,"port = %d\n",&(dbp->port)) != 1){
+        res = 25;
         goto end;
     }
 
 end:
     fclose(fp);
+    return(res);
 }
 
 /***********************************************************************
- *make metadata buffer.
+ * backup database operation.
  *@return TRUE on success,FALSE on failure.
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
@@ -47,7 +54,7 @@ int backup_database(PARA *para){
 
 
 /***********************************************************************
- *make metadata buffer.
+ * restore database operation.
  *@return TRUE on success,FALSE on failure.
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
@@ -56,7 +63,7 @@ int restore_database(PARA *para){
 }
 
 /***********************************************************************
- *make metadata buffer.
+ * some database operation history.
  *@return TRUE on success,FALSE on failure.
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
@@ -65,12 +72,13 @@ int operate_database_history(PARA *para){
 }
 
 /***********************************************************************
- *make metadata buffer.
+ * pdb shell.
  *@return TRUE on success,FALSE on failure.
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
 int pdb_shell(DBP *dbp){
+
     static int res = 0;
     static char *connhost = NULL;
     static char *connuser = NULL;
