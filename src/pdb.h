@@ -10,6 +10,7 @@ extern char **environ;
 
 #define DFTLENGTH 1024
 char *pdb_conn_info = "/root/.conn";
+char *inno_conn_info = "/root/.inno";
 
 typedef struct dbparams{
     char * host;
@@ -33,6 +34,7 @@ typedef struct innobak{
     int parallel;
     int throttle;
     char *use_memory;
+    char *todir;
 }INNOBAK;
 
 int parse_database_conn_params(char *,DBP *);

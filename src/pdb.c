@@ -79,15 +79,15 @@ int parse_innobackupex_params(char *filename,INNOBAK *innobak){
         res = 35;
         goto end;
     }
-    if(fscanf(fp,"compress_threads = %d\n",innobak->compress_threads) != 1){
+    if(fscanf(fp,"compress_threads = %d\n",&(innobak->compress_threads)) != 1){
         res = 35;
         goto end;
     }
-    if(fscanf(fp,"parallel = %d\n",innobak->parallel) != 1){
+    if(fscanf(fp,"parallel = %d\n",&(innobak->parallel)) != 1){
         res = 35;
         goto end;
     }
-    if(fscanf(fp,"throttle = %d\n",innobak->throttle) != 1){
+    if(fscanf(fp,"throttle = %d\n",&(innobak->throttle)) != 1){
         res = 35;
         goto end;
     }
@@ -139,6 +139,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     MYSQL_ROW row;
     unsigned int i,cres,pres;
     char *query = NULL;
+    char *innobackupex = NULL;
+
     char *iinnobak_bin = NULL;
     char *istream = NULL;
     char *icompress = NULL;
@@ -148,6 +150,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     char *ithrottle = NULL;
 
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    innobackupex = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     iinnobak_bin = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     istream = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     icompress = (char *)malloc(sizeof(char)*DFTLENGTH/4);
@@ -157,6 +160,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     ithrottle = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     
     memset(query,0,DFTLENGTH*2);
+    memset(innobackupex,0,DFTLENGTH*2);
     memset(iinnobak_bin,0,DFTLENGTH/4);
     memset(istream,0,DFTLENGTH/4);
     memset(icompress,0,DFTLENGTH/4);
@@ -167,7 +171,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
 
     pres = parse_database_conn_params(pdb_conn_info,dbp);
 
-    parse_innobackupex_params(pdb_conn_info,innobak);
+    parse_innobackupex_params(inno_conn_info,innobak);
     snprintf(iinnobak_bin,DFTLENGTH/4,"%s",innobak->innobak_bin);
     snprintf(istream,DFTLENGTH/4,"--stream=%s",innobak->stream);
     snprintf(icompress,DFTLENGTH/4,"%s",innobak->compress);
@@ -176,20 +180,30 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     snprintf(ithrottle,DFTLENGTH/4,"--throttle=%d",innobak->throttle);
     snprintf(iuse_memory,DFTLENGTH/4,"--use_memory=%s",innobak->use_memory);
 
-    if(strlen(para[2].content) != 0){
-        snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[2].content,"'");
-        cres = connection_pdb_server(dbp,res,&row,query);
-        if(cres == 0){
-            if(atoi(row[0]) == 1){
-                printf("row[0]=%d\n",atoi(row[0]));
-                i=system("/usr/bin/innobackupex --password=k7e3h8q4 --stream=xbstream --compress . >/root/backup/1.tar");
-                printf(">>>%d\n",i);
-            }else{
-                printf("row[0]=%d\n",atoi(row[0]));
+    if(strstr(para[2].content,"db") || strstr(para[2].content,"database")){
+        if(strlen(para[3].content) != 0){
+            snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
+            cres = connection_pdb_server(dbp,res,&row,query);
+            if(cres == 0){
+                if(atoi(row[0]) == 1){
+                    snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s . >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream);
+                    i=system(innobackupex);
+                    if(i == 0){
+                        printf("Backup Success!\n");
+                    }
+                    else{
+                        printf("Backup Failure!\n");
+                    }
+                }else{
+                    printf("No %s\n",para[3].content);
+                }
             }
+        }else{
+            printf("para[2].content=%s\n",para[2].content);
         }
-    }else{
-        printf("para[2].content=%s\n",para[2].content);
+    }
+    else{
+        printf("not exec %s \n",para[2].content);
     }
 }
 
@@ -316,11 +330,13 @@ int main(int argc,char **argv){
     innobak->stream = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     innobak->compress = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     innobak->use_memory = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    innobak->todir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
 
     memset(innobak->innobak_bin,0,DFTLENGTH/4);
     memset(innobak->stream,0,DFTLENGTH/4);
     memset(innobak->compress,0,DFTLENGTH/4);
     memset(innobak->use_memory,0,DFTLENGTH/4);
+    memset(innobak->todir,0,DFTLENGTH/2);
     innobak->compress_threads=4;
     innobak->parallel = 4;
     innobak->throttle = 500;
