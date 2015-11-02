@@ -78,7 +78,7 @@ int operate_database_history(PARA *para){
  * Date:20151019PM1318
 */
 int pdb_shell(DBP *dbp){
-    int res = 0;
+    int pres = 0;
     int exeres = 0;
 
     static int res = 0;
@@ -110,13 +110,13 @@ int pdb_shell(DBP *dbp){
         //execute /usr/bin/mysql.
         exeres = execlp("/usr/bin/mysql","mysql",connhost,connuser,connpass,connport,NULL);
         if(exeres = -1){
-            res = 2;
+            pres = 2;
         }
     }
     else{
-        res = 1;
+        pres = 1;
     }
-    return(res);
+    return(pres);
 }
 
 //main function.

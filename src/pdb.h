@@ -3,6 +3,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <mysql/mysql.h>
+#include <mysql/my_global.h>
+
 extern char **environ;
 
 #define DFTLENGTH 1024
