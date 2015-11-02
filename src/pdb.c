@@ -67,28 +67,33 @@ int parse_innobackupex_params(char *filename,INNOBAK *innobak){
         return(res);
     }
 
-    while(fscanf(fp,"%s = %s\n",ikey,ivalues) != 1){
-        if(strstr("innobak_bin",ikey) != NULL){
-            innobak->innobak_bin = ivalues;
-        }
-        if(strstr("stream",ikey) != NULL){
-            innobak->stream = ivalues;
-        }
-        if(strstr("compress",ikey) != NULL){
-            innobak->compress = ivalues;
-        }
-        if(strstr("compress_threads",ikey) != NULL){
-            innobak->compress_threads = ivalues;
-        }
-        if(strstr("parallel",ikey) != NULL){
-            innobak->parallel = ivalues;
-        }
-        if(strstr("throttle",ikey) != NULL){
-            innobak->throttle = ivalues;
-        }
-        if(strstr("use_memory",ikey) != NULL){
-            innobak->use_memory = ivalues;
-        }
+    if(fscanf(fp,"innobak_bin = %s\n",innobak->innobak_bin) != 1){
+        res = 35;
+        goto end;
+    }
+    if(fscanf(fp,"stream = %s\n",innobak->stream ) != 1){
+        res = 35;
+        goto end;
+    }
+    if(fscanf(fp,"compress = %s\n",innobak->compress) != 1){
+        res = 35;
+        goto end;
+    }
+    if(fscanf(fp,"compress_threads = %d\n",innobak->compress_threads) != 1){
+        res = 35;
+        goto end;
+    }
+    if(fscanf(fp,"parallel = %d\n",innobak->parallel) != 1){
+        res = 35;
+        goto end;
+    }
+    if(fscanf(fp,"throttle = %d\n",innobak->throttle) != 1){
+        res = 35;
+        goto end;
+    }
+    if(fscanf(fp,"use_memory = %s\n",innobak->use_memory) != 1){
+        res = 35;
+        goto end;
     }
 end:
     fclose(fp);
@@ -129,16 +134,47 @@ int connection_pdb_server(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,char *query){
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
-int backup_database(PARA *para,DBP *dbp){
+int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     MYSQL_RES *res = NULL;
     MYSQL_ROW row;
     unsigned int i,cres,pres;
     char *query = NULL;
+    char *iinnobak_bin = NULL;
+    char *istream = NULL;
+    char *icompress = NULL;
+    char *iuse_memory = NULL;
+    char *icompress_threads = NULL;
+    char *iparallel = NULL;
+    char *ithrottle = NULL;
 
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    iinnobak_bin = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    istream = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    icompress = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    iuse_memory = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    icompress_threads= (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    iparallel = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    ithrottle = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    
     memset(query,0,DFTLENGTH*2);
+    memset(iinnobak_bin,0,DFTLENGTH/4);
+    memset(istream,0,DFTLENGTH/4);
+    memset(icompress,0,DFTLENGTH/4);
+    memset(iuse_memory,0,DFTLENGTH/4);
+    memset(iparallel,0,DFTLENGTH/4);
+    memset(ithrottle,0,DFTLENGTH/4);
+    memset(icompress_threads,0,DFTLENGTH/4);
 
     pres = parse_database_conn_params(pdb_conn_info,dbp);
+
+    parse_innobackupex_params(pdb_conn_info,innobak);
+    snprintf(iinnobak_bin,DFTLENGTH/4,"%s",innobak->innobak_bin);
+    snprintf(istream,DFTLENGTH/4,"--stream=%s",innobak->stream);
+    snprintf(icompress,DFTLENGTH/4,"%s",innobak->compress);
+    snprintf(icompress_threads,DFTLENGTH/4,"--compress_threads=%d",innobak->compress_threads);
+    snprintf(iparallel,DFTLENGTH/4,"--parallel=%d",innobak->parallel);
+    snprintf(ithrottle,DFTLENGTH/4,"--throttle=%d",innobak->throttle);
+    snprintf(iuse_memory,DFTLENGTH/4,"--use_memory=%s",innobak->use_memory);
 
     if(strlen(para[2].content) != 0){
         snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[2].content,"'");
@@ -317,7 +353,7 @@ int main(int argc,char **argv){
     
     if(strstr("backup",para[1].content)){
         printf("para[1].pos = %d,para[1].content = %s\n",para[1].pos,para[1].content);
-        backup_database(para,dbp);
+        backup_database(para,dbp,innobak);
     }
     else if(strstr("restore",para[1].content)){
         printf("para[1].pos = %d,para[1].content = %s\n",para[1].pos,para[1].content);
