@@ -44,12 +44,65 @@ end:
 }
 
 /***********************************************************************
+ * connection pdb server.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int connection_pdb_server(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,char *query){
+    //创建MySQL数据库连接符。
+    MYSQL *conn = NULL;
+    conn = mysql_init(NULL);
+    //连接到目标数据库
+    mysql_real_connect(conn,dbp->host,dbp->user,dbp->pass,NULL,dbp->port,dbp->socket,0);
+
+    int mysql_query_res = 0;
+    mysql_query_res = mysql_query(conn,query);
+    if(mysql_query_res != 0){
+        return(1);
+    }
+
+    res = mysql_store_result(conn);
+    if(res == NULL){
+        return(2);
+    }
+
+    *row = mysql_fetch_row(res);
+    return(0);
+}
+
+/********************n***************************************************
  * backup database operation.
  *@return TRUE on success,FALSE on failure.
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
-int backup_database(PARA *para){
+int backup_database(PARA *para,DBP *dbp){
+    MYSQL_RES *res = NULL;
+    MYSQL_ROW row;
+    unsigned int i,cres,pres;
+    char *query = NULL;
+
+    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    memset(query,0,DFTLENGTH*2);
+
+    pres = parse_database_conn_params(pdb_conn_info,dbp);
+
+    if(strlen(para[2].content) != 0){
+        snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[2].content,"'");
+        cres = connection_pdb_server(dbp,res,&row,query);
+        if(cres == 0){
+            if(atoi(row[0]) == 1){
+                printf("row[0]=%d\n",atoi(row[0]));
+                i=system("/usr/bin/innobackupex --password=k7e3h8q4 --stream=xbstream --compress . >/root/backup/1.tar");
+                printf(">>>%d\n",i);
+            }else{
+                printf("row[0]=%d\n",atoi(row[0]));
+            }
+        }
+    }else{
+        printf("para[2].content=%s\n",para[2].content);
+    }
 }
 
 
@@ -196,6 +249,7 @@ int main(int argc,char **argv){
     
     if(strstr("backup",para[1].content)){
         printf("para[1].pos = %d,para[1].content = %s\n",para[1].pos,para[1].content);
+        backup_database(para,dbp);
     }
     else if(strstr("restore",para[1].content)){
         printf("para[1].pos = %d,para[1].content = %s\n",para[1].pos,para[1].content);
