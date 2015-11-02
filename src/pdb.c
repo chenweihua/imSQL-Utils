@@ -165,18 +165,20 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     snprintf(ithrottle,DFTLENGTH/4,"--throttle=%d",innobak->throttle);
     snprintf(iuse_memory,DFTLENGTH/4,"--use_memory=%s",innobak->use_memory);
 
-    if(strstr(para[2].content,"db") || strstr(para[2].content,"database")){
-        //pdb backup [db/database {dbname}|alldb]
-        if(strlen(para[3].content) != 0){
-            //pdb backup db sysadmin [online|offline]
-            if(strstr(para[4].content,"online")){
-                //pdb backup db sysadmin online [compress|nocompress]
-                if(strstr(para[5].content,"compress")){
-                    //pdb backup db sysadmin online compress [includelogs|null]
-                    if(strstr(para[6].content,"includelogs")){
+    switch(para->argclen){
+        case 2:
+            printf("./pdb backup db|database dbname [online|offline] [compress|nocompress] [includelogs|excludelogs]\n");
+            return(2);
+            break;
+        case 3:
+            printf("./pdb backup db|database dbname [online|offline] [compress|nocompress] [includelogs|excludelogs]\n");
+            break;
+        case 4:
+            if((strstr(para[2].content,"database") || strstr(para[2].content,"db"))){
+                if((strlen(para[3].content) != 0)){
+                    if(strstr(para[4].content,"online")){
                         snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
                         cres = connection_pdb_server(dbp,res,&row,query);
-
                         if(cres == 0){
                             if(atoi(row[0]) == 1){
                                 snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
@@ -193,70 +195,37 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                             }
                         }
                         else{
-                            printf("connection_pdb_server success\n"); 
+                            printf("connection_pdb_server failure\n");
                         }
+
+                    }
+                    else if(strstr(para[4].content,"offline")){
+                        printf("offline backup\n");
                     }
                     else{
-                        //if no include logs
-                        snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-                        cres = connection_pdb_server(dbp,res,&row,query);
-
-                        if(cres == 0){
-                            if(atoi(row[0]) == 1){
-                                snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                i=system(innobackupex);
-                                if(i == 0){
-                                    printf("Backup Success!\n");
-                                }
-                                else{
-                                    printf("Backup Failure!\n");
-                                }
-                            }
-                            else{
-                                printf("No %s\n",para[3].content);
-                            }
-                        }
-                        else{
-                            printf("connection_pdb_server success\n"); 
-                        }
-                        printf("para[6].content=%s\n",para[6].content);
+                        printf("./pdb backup db|database dbname [online|offline] [compress|nocompress] [includelogs|excludelogs]\n");
+                        return(41);
                     }
-                }
-                else{
-                        snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-                        cres = connection_pdb_server(dbp,res,&row,query);
-
-                        if(cres == 0){
-                            if(atoi(row[0]) == 1){
-                                snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                i=system(innobackupex);
-                                if(i == 0){
-                                    printf("Backup Success!\n");
-                                }
-                                else{
-                                    printf("Backup Failure!\n");
-                                }
-                            }
-                            else{
-                                printf("No %s\n",para[3].content);
-                            }
-                        }
-                        else{
-                            printf("connection_pdb_server success\n"); 
-                        }
-                    printf("para[5].content=%s\n",para[5].content);
+                } 
+                else {
+                    printf("./pdb backup db|database dbname [online|offline] [compress|nocompress] [includelogs|excludelogs]\n");
+                    return(31);
                 }
             }
             else{
-                printf("para[4].content=%s\n",para[4].content);
+                printf("./pdb backup db|database dbname [online|offline] [compress|nocompress] [includelogs|excludelogs]\n");
+                return(21);
             }
-        }
-        else{
-            printf("para[3].content=%s\n",para[3].content);
-        }
-    }
-    else{
-        printf("para[2].content=%s\n",para[2].content);
+                       break;
+        case 5:
+            printf("5\n");
+            break;
+        case 6:
+            printf("6\n");
+            break;
+        default:
+            printf("./pdb backup db|database dbname [online|offline] [compress|nocompress] [includelogs|excludelogs]\n");
+            return(7);
     }
 }
 
