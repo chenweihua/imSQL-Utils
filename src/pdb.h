@@ -28,9 +28,6 @@ typedef struct params{
 
 typedef struct innobak{
     char *innobak_bin;
-    char *stream;
-    char *compress;
-    int compress_threads;
     int parallel;
     int throttle;
     char *use_memory;

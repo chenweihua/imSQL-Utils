@@ -71,18 +71,6 @@ int parse_innobackupex_params(char *filename,INNOBAK *innobak){
         res = 35;
         goto end;
     }
-    if(fscanf(fp,"stream = %s\n",innobak->stream ) != 1){
-        res = 35;
-        goto end;
-    }
-    if(fscanf(fp,"compress = %s\n",innobak->compress) != 1){
-        res = 35;
-        goto end;
-    }
-    if(fscanf(fp,"compress_threads = %d\n",&(innobak->compress_threads)) != 1){
-        res = 35;
-        goto end;
-    }
     if(fscanf(fp,"parallel = %d\n",&(innobak->parallel)) != 1){
         res = 35;
         goto end;
@@ -173,41 +161,89 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
 
     parse_innobackupex_params(inno_conn_info,innobak);
     snprintf(iinnobak_bin,DFTLENGTH/4,"%s",innobak->innobak_bin);
-    snprintf(istream,DFTLENGTH/4,"--stream=%s",innobak->stream);
-    snprintf(icompress,DFTLENGTH/4,"%s",innobak->compress);
-    snprintf(icompress_threads,DFTLENGTH/4,"--compress_threads=%d",innobak->compress_threads);
     snprintf(iparallel,DFTLENGTH/4,"--parallel=%d",innobak->parallel);
     snprintf(ithrottle,DFTLENGTH/4,"--throttle=%d",innobak->throttle);
     snprintf(iuse_memory,DFTLENGTH/4,"--use_memory=%s",innobak->use_memory);
 
     if(strstr(para[2].content,"db") || strstr(para[2].content,"database")){
+        //pdb backup [db/database {dbname}|alldb]
         if(strlen(para[3].content) != 0){
+            //pdb backup db sysadmin [online|offline]
             if(strstr(para[4].content,"online")){
+                //pdb backup db sysadmin online [compress|nocompress]
                 if(strstr(para[5].content,"compress")){
+                    //pdb backup db sysadmin online compress [includelogs|null]
                     if(strstr(para[6].content,"includelogs")){
-                    snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-                    cres = connection_pdb_server(dbp,res,&row,query);
+                        snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
+                        cres = connection_pdb_server(dbp,res,&row,query);
 
-                    if(cres == 0){
-                        if(atoi(row[0]) == 1){
-                            snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s . >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream);
-                            i=system(innobackupex);
-                            if(i == 0){
-                                printf("Backup Success!\n");
+                        if(cres == 0){
+                            if(atoi(row[0]) == 1){
+                                snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
+                                i=system(innobackupex);
+                                if(i == 0){
+                                    printf("Backup Success!\n");
+                                }
+                                else{
+                                    printf("Backup Failure!\n");
+                                }
                             }
                             else{
-                                printf("Backup Failure!\n");
+                                printf("No %s\n",para[3].content);
                             }
-                        }else{
-                            printf("No %s\n",para[3].content);
+                        }
+                        else{
+                            printf("connection_pdb_server success\n"); 
                         }
                     }
-                    }
                     else{
+                        //if no include logs
+                        snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
+                        cres = connection_pdb_server(dbp,res,&row,query);
+
+                        if(cres == 0){
+                            if(atoi(row[0]) == 1){
+                                snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
+                                i=system(innobackupex);
+                                if(i == 0){
+                                    printf("Backup Success!\n");
+                                }
+                                else{
+                                    printf("Backup Failure!\n");
+                                }
+                            }
+                            else{
+                                printf("No %s\n",para[3].content);
+                            }
+                        }
+                        else{
+                            printf("connection_pdb_server success\n"); 
+                        }
                         printf("para[6].content=%s\n",para[6].content);
                     }
                 }
                 else{
+                        snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
+                        cres = connection_pdb_server(dbp,res,&row,query);
+
+                        if(cres == 0){
+                            if(atoi(row[0]) == 1){
+                                snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
+                                i=system(innobackupex);
+                                if(i == 0){
+                                    printf("Backup Success!\n");
+                                }
+                                else{
+                                    printf("Backup Failure!\n");
+                                }
+                            }
+                            else{
+                                printf("No %s\n",para[3].content);
+                            }
+                        }
+                        else{
+                            printf("connection_pdb_server success\n"); 
+                        }
                     printf("para[5].content=%s\n",para[5].content);
                 }
             }
@@ -216,11 +252,11 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
             }
         }
         else{
-            printf("para[2].content=%s\n",para[2].content);
+            printf("para[3].content=%s\n",para[3].content);
         }
     }
     else{
-        printf("not exec %s \n",para[2].content);
+        printf("para[2].content=%s\n",para[2].content);
     }
 }
 
@@ -344,17 +380,12 @@ int main(int argc,char **argv){
     INNOBAK *innobak;
     innobak = (INNOBAK *)malloc(sizeof(INNOBAK));
     innobak->innobak_bin = (char *)malloc(sizeof(char)*DFTLENGTH/4);
-    innobak->stream = (char *)malloc(sizeof(char)*DFTLENGTH/4);
-    innobak->compress = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     innobak->use_memory = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     innobak->todir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
 
     memset(innobak->innobak_bin,0,DFTLENGTH/4);
-    memset(innobak->stream,0,DFTLENGTH/4);
-    memset(innobak->compress,0,DFTLENGTH/4);
     memset(innobak->use_memory,0,DFTLENGTH/4);
     memset(innobak->todir,0,DFTLENGTH/2);
-    innobak->compress_threads=4;
     innobak->parallel = 4;
     innobak->throttle = 500;
     
