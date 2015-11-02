@@ -71,6 +71,46 @@ int restore_database(PARA *para){
 int operate_database_history(PARA *para){
 }
 
+
+/***********************************************************************
+ * some database operation history.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int list_backup_history(){
+}
+
+
+/***********************************************************************
+ * some database operation history.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int list_restore_history(){
+}
+
+
+/***********************************************************************
+ * some database operation history.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int list_archlog_history(){
+}
+
+
+/***********************************************************************
+ * some database operation history.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int list_event_schedule_history(){
+}
+
 /***********************************************************************
  * pdb shell.
  *@return TRUE on success,FALSE on failure.
