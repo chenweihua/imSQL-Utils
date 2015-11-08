@@ -12,6 +12,7 @@ readonly BKBDIR='/Database/Backup/PhysicalBackup/'
 readonly BKLDIR='/Database/Backup/BackupLogs/'
 readonly CUR_DATE=`date +'%Y%m%d%H%M%S'`
 readonly DAYOFWEEK=`date +'%u'`
+readonly DAYOFMONTH=`date +'%d'`
 readonly REGISTER='/opt/pdb/bin/registe_metadata'
 readonly READER='/opt/pdb/bin/read_metadata'
 
@@ -34,7 +35,7 @@ function delete_old_binlog() {
 
 
 function dbbackup () {
-	if [ $DAYOFWEEK -ne 2 ];then
+	if [ $DAYOFMONTH = "01" ];then
 		innobackupex --defaults-file=$DEFAULTS_FILE --host $DBHOST --user $DBUSER --password $DBPASS --socket $DBSOCK --parallel=4 --throttle=400 --databases="mysql parafiledb karma parchdb parauser oits_mobile" $BKBDIR 2>$BKLDIR/"$CUR_DATE"_FUL.log 
 		if [ $? -eq 0 ];then
 			echo "$CUR_DATE"_FUL.log >$BKLDIR/fullbaklist.log
@@ -48,7 +49,7 @@ function dbbackup () {
 			return 1
 		fi
 		
-	else 
+    elif [[ $DAYOFMONTH != "01"  && $DAYOFWEEK = "1" ]];then
 		FULBKBD=`$READER|awk '{print $1}'`
         FULBKDIR=`$READER|awk '{print $2}'`
 		if [ -n $FULBKDIR ];then
@@ -61,6 +62,8 @@ function dbbackup () {
 				return 2
 			fi
 		fi
+    else
+        echo "Nothing"
 	fi
 	return 0
 }
