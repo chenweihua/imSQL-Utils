@@ -1,5 +1,5 @@
 Name:       ParateraDB-Utils	
-Version:    1.0.1
+Version:    1.0.2
 Release:	1%{?dist}
 Summary:	ParateraDB Utils Tools.
 
@@ -10,7 +10,8 @@ Source0:    https://git.paratera.net/dba/%{name}.tar.gz
 
 
 BuildRequires: coreutils grep procps shadow-utils gcc-c++ gperf ncurses-devel perl readline-devel time zlib-devel libaio-devel bison cmake make automake	
-Requires: mailx tar openssl grep coreutils procps shadow-utils perl time pigz ParateraDB-Backup ParateraDB-Server-server-56 ParateraDB-Server-client-56 perl-IO-Socket-SSL perl-Net-LibIDN perl-Net-SSLeay perl-TermReadKey	
+Requires: mailx tar openssl grep coreutils procps shadow-utils perl time pigz ParateraDB-Backup ParateraDB-Server-server-56 ParateraDB-Server-client-56	
+#Requires: mailx tar openssl grep coreutils procps shadow-utils perl time pigz ParateraDB-Backup ParateraDB-Server-server-56 ParateraDB-Server-client-56 perl-IO-Socket-SSL perl-Net-LibIDN perl-Net-SSLeay perl-TermReadKey	
 
 %description
     ParateraDB Utils Tools.
@@ -67,6 +68,8 @@ install -D -m 0755 $MBD/support-scripts/pt-table-usage $RBR/%{_bindir}/pt-table-
 install -D -m 0755 $MBD/support-scripts/pt-upgrade $RBR/%{_bindir}/pt-upgrade
 install -D -m 0755 $MBD/support-scripts/pt-variable-advisor $RBR/%{_bindir}/pt-variable-advisor
 install -D -m 0755 $MBD/support-scripts/pt-visual-explain $RBR/%{_bindir}/pt-visual-explain
+cp -r $MBD/doc/doc $RBR/%{_datadir}/
+cp -r $MBD/doc/man $RBR/%{_datadir}/
 
 
 %files
@@ -77,6 +80,75 @@ install -D -m 0755 $MBD/support-scripts/pt-visual-explain $RBR/%{_bindir}/pt-vis
 %{_bindir}/SyncDBxBak
 %{_bindir}/read_metadata
 %{_bindir}/registe_metadata
+%{_bindir}/pt-align
+%{_bindir}/pt-archiver
+%{_bindir}/pt-config-diff
+%{_bindir}/pt-deadlock
+%{_bindir}/pt-diskstats
+%{_bindir}/pt-duplicate-key-checker
+%{_bindir}/pt-fifo-split
+%{_bindir}/pt-find
+%{_bindir}/pt-fingerprint
+%{_bindir}/pt-fk-error-logger
+%{_bindir}/pt-heartbeatd
+%{_bindir}/pt-index-usage
+%{_bindir}/pt-ioprofile
+%{_bindir}/pt-kill
+%{_bindir}/pt-mext
+%{_bindir}/pt-mysql-summary
+%{_bindir}/pt-online-schema-change
+%{_bindir}/pt-pmp
+%{_bindir}/pt-query-digest
+%{_bindir}/pt-show-grants
+%{_bindir}/pt-sift
+%{_bindir}/pt-slave-delay
+%{_bindir}/pt-slave-find
+%{_bindir}/pt-slave-restart
+%{_bindir}/pt-stalk
+%{_bindir}/pt-summary
+%{_bindir}/pt-table-checksum
+%{_bindir}/pt-table-sync
+%{_bindir}/pt-table-usage
+%{_bindir}/pt-upgrade
+%{_bindir}/pt-variable-advisor
+%{_bindir}/pt-visual-explain
+%{_datadir}/man/man1/percona-toolkit.1p.gz
+%{_datadir}/man/man1/pt-align.1p.gz
+%{_datadir}/man/man1/pt-archiver.1p.gz
+%{_datadir}/man/man1/pt-config-diff.1p.gz
+%{_datadir}/man/man1/pt-deadlock-logger.1p.gz
+%{_datadir}/man/man1/pt-diskstats.1p.gz
+%{_datadir}/man/man1/pt-duplicate-key-checker.1p.gz
+%{_datadir}/man/man1/pt-fifo-split.1p.gz
+%{_datadir}/man/man1/pt-find.1p.gz
+%{_datadir}/man/man1/pt-fingerprint.1p.gz
+%{_datadir}/man/man1/pt-fk-error-logger.1p.gz
+%{_datadir}/man/man1/pt-heartbeat.1p.gz
+%{_datadir}/man/man1/pt-index-usage.1p.gz
+%{_datadir}/man/man1/pt-ioprofile.1p.gz
+%{_datadir}/man/man1/pt-kill.1p.gz
+%{_datadir}/man/man1/pt-mext.1p.gz
+%{_datadir}/man/man1/pt-mysql-summary.1p.gz
+%{_datadir}/man/man1/pt-online-schema-change.1p.gz
+%{_datadir}/man/man1/pt-pmp.1p.gz
+%{_datadir}/man/man1/pt-query-digest.1p.gz
+%{_datadir}/man/man1/pt-show-grants.1p.gz
+%{_datadir}/man/man1/pt-sift.1p.gz
+%{_datadir}/man/man1/pt-slave-delay.1p.gz
+%{_datadir}/man/man1/pt-slave-find.1p.gz
+%{_datadir}/man/man1/pt-slave-restart.1p.gz
+%{_datadir}/man/man1/pt-stalk.1p.gz
+%{_datadir}/man/man1/pt-summary.1p.gz
+%{_datadir}/man/man1/pt-table-checksum.1p.gz
+%{_datadir}/man/man1/pt-table-sync.1p.gz
+%{_datadir}/man/man1/pt-table-usage.1p.gz
+%{_datadir}/man/man1/pt-upgrade.1p.gz
+%{_datadir}/man/man1/pt-variable-advisor.1p.gz
+%{_datadir}/man/man1/pt-visual-explain.1p.gz
+%{_datadir}/percona-toolkit-2.2.15/COPYING
+%{_datadir}/percona-toolkit-2.2.15/Changelog
+%{_datadir}/percona-toolkit-2.2.15/INSTALL
+%{_datadir}/percona-toolkit-2.2.15/README
 #%doc
 
 
