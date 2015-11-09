@@ -31,7 +31,9 @@ typedef struct innobak{
     int parallel;
     int throttle;
     char *use_memory;
-    char *todir;
+    char *todir; //for backup
+    char *fromdir; //for restore
+    char *intodir; //for restore
 }INNOBAK;
 
 int parse_database_conn_params(char *,DBP *);
