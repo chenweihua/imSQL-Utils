@@ -10,8 +10,21 @@ Source0:    https://git.paratera.net/dba/%{name}.tar.gz
 
 
 BuildRequires: coreutils grep procps shadow-utils gcc-c++ gperf ncurses-devel perl readline-devel time zlib-devel libaio-devel bison cmake make automake	
-Requires: mailx tar openssl grep coreutils procps shadow-utils perl time pigz ParateraDB-Backup ParateraDB-Server-server-56 ParateraDB-Server-client-56	
-#Requires: mailx tar openssl grep coreutils procps shadow-utils perl time pigz ParateraDB-Backup ParateraDB-Server-server-56 ParateraDB-Server-client-56 perl-IO-Socket-SSL perl-Net-LibIDN perl-Net-SSLeay perl-TermReadKey	
+
+AutoReq: no
+
+%global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(AdvisorRules\\)$
+%global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(Diskstats.*\\)$
+%global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(Lmo.*\\)$
+%global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(NibbleIterator\\)$
+%global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(Percona::Toolkit\\)$
+%global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(Quoter\\)$
+%global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(ReadKeyMini\\)$
+%global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(Transformers\\)$
+
+Requires:       mailx tar openssl grep coreutils procps shadow-utils perl time pigz ParateraDB-Backup ParateraDB-Server-server-56 ParateraDB-Server-client-56	
+Requires:       perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
+Requires:       perl(DBD::mysql)
 
 %description
     ParateraDB Utils Tools.
