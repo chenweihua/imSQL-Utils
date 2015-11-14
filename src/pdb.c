@@ -11,7 +11,7 @@ void print_main_help(void)
     char *help_msgs = "Usage: \n \
 \tpdb {backup|restore|history|shell|help} \n \
 \nSample: \n \
-\tpdb backup {alldbs|db} {NULL|dbname} {full|incremental} {offline|online} [compress] {to 'path'} \n \
+\tpdb backup {all|db} {NULL|dbname} {full|incremental} {offline|online} [compress] {to 'path'} \n \
 \tpdb restore {backup_id} [from 'path'] [into 'path'] \n \
 \tpdb history list [backup|restore|archive_logs|event_schedule] [begin 'timestamp'] [end 'tiemstamp'] [detail] \n \
 \tpdb shell \n \
@@ -28,14 +28,14 @@ void print_main_help(void)
 void print_backup_help(void)
 {
     char *help_msgs = "Usage: \n \
-\tpdb backup {alldbs|db} {NULL|dbname} {full|incremental} {offline|online} [compress] {to 'path'} \n \
+\tpdb backup {all|db} {NULL|dbname} {full|incremental} {offline|online} [compress] {to 'path'} \n \
 \nSample:\n \
-\tpdb backup alldbs full offline  to \'/dbbackup\' \n \
-\tpdb backup alldbs full offline compress to \'/dbbackup\' \n \
-\tpdb backup alldbs full online to \'/dbbackup\' \n \
-\tpdb backup alldbs full online compress to '/dbbackup' \n \
-\tpdb backup alldbs incremental online to '/dbbackup' \n \
-\tpdb backup alldbs incremental online compress to '/dbbackup' \n \
+\tpdb backup all full offline  to \'/dbbackup\' \n \
+\tpdb backup all full offline compress to \'/dbbackup\' \n \
+\tpdb backup all full online to \'/dbbackup\' \n \
+\tpdb backup all full online compress to '/dbbackup' \n \
+\tpdb backup all incremental online to '/dbbackup' \n \
+\tpdb backup all incremental online compress to '/dbbackup' \n \
 \tpdb backup db basedb full online to '/dbbackup' \n \
 \tpdb backup db basedb full online compress to '/dbbackup' \n \
 \tpdb backup db basedb incremental online to '/dbbackup' \n \
@@ -295,14 +295,14 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
             return(250);
             break;
         case 6:
-            if(strstr("alldbs",para[2].content)){
-                //pdb backup alldbs full offline  to '/dbbackup'
-                //pdb backup alldbs full online to '/dbbackup'
+            if(strstr("all",para[2].content)){
+                //pdb backup all full offline  to '/dbbackup'
+                //pdb backup all full online to '/dbbackup'
                 if(strstr("full",para[3].content)){
                     if(strstr("offline",para[4].content)){
                         if(strstr("to",para[5].content)){
                             if(strlen(para[5].content) != 0){
-                                //pdb backup alldbs full offline  to '/dbbackup'
+                                //pdb backup all full offline  to '/dbbackup'
                                 printf("Please backup db manual\n");
                             }
                             else{
@@ -317,8 +317,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                     else if(strstr("online",para[4].content)){
                         if(strstr("to",para[5].content)){
                             if(strlen(para[6].content) != 0){
-                                //pdb backup alldbs full online to '/dbbackup'
-                                printf("full online backup alldbs\n");
+                                //pdb backup all full online to '/dbbackup'
+                                printf("full online backup all\n");
                             }
                             else{
                                 print_backup_help();
@@ -335,11 +335,11 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                         return(265);
                     }
                 }else if(strstr("incremental",para[3].content)){
-                    //pdb backup alldbs incremental online to '/dbbackup'
+                    //pdb backup all incremental online to '/dbbackup'
                     if(strstr("online",para[4].content)){
                         if(strstr("to",para[5].content)){
                             if(strlen(para[6].content) != 0){
-                                printf("onlie incremental backup alldbs\n");
+                                printf("onlie incremental backup all\n");
                             }
                             else{
                                 print_backup_help();
@@ -417,7 +417,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                 cres = connection_pdb_server(dbp,res,&row,query);
                                 if(cres == 0){
                                     if(atoi(row[0]) == 1){
-                                        //pdb backup db basedb full online to '/dbbackup' 
+                                        //pdb backup db basedb incremental online to '/dbbackup' 
                                         snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
                                         i=system(innobackupex);
                                         if(i == 0){
@@ -459,19 +459,19 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                     return(278);
                 }
             }
-            else if(strstr("alldbs",para[2].content)){
+            else if(strstr("all",para[2].content)){
                 /*
-                   pdb backup alldbs full offline compress to '/dbbackup' 
-                   pdb backup alldbs full online compress to '/dbbackup' 
-                   pdb backup alldbs incremental online compress to '/dbbackup' 
+                   pdb backup all full offline compress to '/dbbackup' 
+                   pdb backup all full online compress to '/dbbackup' 
+                   pdb backup all incremental online compress to '/dbbackup' 
                    */
                 if(strstr("full",para[3].content)){
                     if(strstr("offline",para[4].content)){
                         if(strstr("compress",para[5].content)){
                             if(strstr("to",para[6].content)){
                                 if(strlen(para[7].content) != 0){
-                                    //pdb backup alldbs full offline compress to '/dbbackup' 
-                                    printf("pdb backup alldbs full offline compress to /dbbackup \n");
+                                    //pdb backup all full offline compress to '/dbbackup' 
+                                    printf("pdb backup all full offline compress to /dbbackup \n");
                                 }
                                 else{
                                     print_backup_help();
@@ -491,8 +491,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                         if(strstr("compress",para[5].content)){
                             if(strstr("to",para[6].content)){
                                 if(strlen(para[7].content) != 0){
-                                    //pdb backup alldbs full online compress to '/dbbackup' 
-                                    printf("pdb backup alldbs full online compress to /dbbackup\n");
+                                    //pdb backup all full online compress to '/dbbackup' 
+                                    printf("pdb backup all full online compress to /dbbackup\n");
                                 }
                                 else{
                                     print_backup_help();
@@ -514,16 +514,17 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                         return(2715);
                     }
                 }
-                //pdb backup alldbs incremental online compress to '/dbbackup' 
                 else if(strstr("incremental",para[3].content)){
                     if(strstr("online",para[4].content)){
                         if(strstr("compress",para[5].content)){
                             if(strstr("to",para[6].content)){
                                 if(strlen(para[7].content) != 0){
-                                    printf("pdb backup alldbs incremental online compress to /dbbackup\n");
+                                    //pdb backup all incremental online compress to '/dbbackup' 
+                                    printf("pdb backup all incremental online compress to /dbbackup\n");
                                     return(0);
                                 }
                                 else{
+                                    printf("Backup Directory Path is NULL\n");
                                     print_backup_help();
                                     return(2720);
                                 }
@@ -555,169 +556,134 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
             }
             break;
         case 8:
-              if((strstr(para[2].content,"database") || strstr(para[2].content,"db"))){
-                if((strlen(para[3].content) != 0)){
-                    if(strstr(para[4].content,"online")){
-                        if(strstr(para[5].content,"full")){
+            /*
+               pdb backup db basedb full online compress to '/dbbackup' 
+               pdb backup db basedb incremental online compress to '/dbbackup' 
+               */
+            if((strstr(para[2].content,"database") || strstr(para[2].content,"db"))){
+                if((strstr("full",para[3].content) == NULL || strstr("incremental",para[3].content) == NULL ||strstr("online",para[3].content) == NULL ||strstr("to",para[3].content) == NULL) && (strlen(para[3].content) != 0)){
+                    if(strstr(para[4].content,"full")){
+                        if(strstr(para[5].content,"online")){
                             if(strstr(para[6].content,"compress")){
-                            snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-                            cres = connection_pdb_server(dbp,res,&row,query);
-                            if(cres == 0){
-                                if(atoi(row[0]) == 1){
-                                    snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                    i=system(innobackupex);
-                                    if(i == 0){
-                                        printf("Backup Success!\n");
+                                if(strstr("to",para[7].content)){
+                                    if(strlen(para[8].content) != 0){
+                                        snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
+                                        cres = connection_pdb_server(dbp,res,&row,query);
+                                        if(cres == 0){
+                                            if(atoi(row[0]) == 1){
+                                                //pdb backup db basedb full online compress to '/dbbackup' 
+                                                snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
+                                                i=system(innobackupex);
+                                                if(i == 0){
+                                                    printf("Backup Success!\n");
+                                                }
+                                                else{
+                                                    printf("Backup Failure!\n");
+                                                    return(281);
+                                                }
+                                            }
+                                            else{
+                                                printf("No %s\n",para[3].content);
+                                                return(282);
+                                            }
+                                        }
+                                        else{
+                                            printf("connection_pdb_server failure\n");
+                                            return(283);
+                                        }
                                     }
                                     else{
-                                        printf("Backup Failure!\n");
+                                        printf("Backup Directory Path is must.\n");
+                                        return(284);
                                     }
                                 }
                                 else{
-                                    printf("No %s\n",para[3].content);
+                                    print_backup_help();
+                                    return(285);
                                 }
-                            }
-                            else{
-                                printf("connection_pdb_server failure\n");
-                            }
-                            }
-                            else if(strstr(para[6].content,"nocompress")){
-                             snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-                            cres = connection_pdb_server(dbp,res,&row,query);
-                            if(cres == 0){
-                                if(atoi(row[0]) == 1){
-                                    snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                    i=system(innobackupex);
-                                    if(i == 0){
-                                        printf("Backup Success!\n");
-                                    }
-                                    else{
-                                        printf("Backup Failure!\n");
-                                    }
-                                }
-                                else{
-                                    printf("No %s\n",para[3].content);
-                                }
-                            }
-                            else{
-                                printf("connection_pdb_server failure\n");
-                            }       
                             }
                             else{
                                 print_backup_help();
-                            }
-                        }
-                        else if(strstr(para[5].content,"incremental")){
-                            snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-                            cres = connection_pdb_server(dbp,res,&row,query);
-                            if(cres == 0){
-                                if(atoi(row[0]) == 1){
-                                    snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                    i=system(innobackupex);
-                                    if(i == 0){
-                                        printf("Backup Success!\n");
-                                    }
-                                    else{
-                                        printf("Backup Failure!\n");
-                                    }
-                                }
-                                else{
-                                    printf("No %s\n",para[3].content);
-                                }
-
-                            }
-                            else{
-                                print_backup_help();
+                                return(286);
                             }
                         }
                         else{
-                            printf("connection_pdb_server failure\n");
+                            print_backup_help();
+                            return(287);
                         }
-
                     }
-                    else if(strstr(para[4].content,"offline")){
-                        printf("offline backup\n");
+                    else if(strstr(para[4].content,"incremental")){
+                        if(strstr("online",para[5].content)){
+                            if(strstr("compress",para[6].content)){
+                                if(strstr("to",para[7].content)){
+                                    if(strlen(para[8].content) != 0){
+                                        snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
+                                        cres = connection_pdb_server(dbp,res,&row,query);
+                                        if(cres == 0){
+                                            if(atoi(row[0]) == 1){
+                                                //pdb backup db basedb incremental online compress to '/dbbackup' 
+                                                snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
+                                                i=system(innobackupex);
+                                                if(i == 0){
+                                                    printf("Backup Success!\n");
+                                                }
+                                                else{
+                                                    printf("Backup Failure!\n");
+                                                    return(288);
+                                                }
+                                            }
+                                            else{
+                                                printf("No %s\n",para[3].content);
+                                                return(289);
+                                            }
+
+                                        }
+                                        else{
+                                            printf("connection_pdb_server failure\n");
+                                            return(2810);
+                                        }
+                                    }
+                                    else{
+                                        print_backup_help();
+                                        return(2811);
+                                    }
+                                }
+                                else{
+                                    print_backup_help();
+                                    return(2812);
+                                }
+
+                            }
+                            else{
+                                print_backup_help();
+                                return(2813);
+                            }
+                        }
+                        else{
+                            print_backup_help();
+                            return(2814);
+                        }
                     }
                     else{
+
                         print_backup_help();
-                        return(41);
+                        return(2815);
                     }
-                } 
-                else {
-                    print_backup_help();
-                    return(31);
                 }
-            }
-            else if(strstr("alldbs",para[2].content)){
-                //pdb backup alldbs full offline  to '/dbbackup'
-                //pdb backup alldbs full online to '/dbbackup'
-                if(strstr("full",para[3].content)){
-                    if(strstr("offline",para[4].content)){
-                        if(strstr("to",para[5].content)){
-                            if(strlen(para[5].content) != 0){
-                                printf("Please backup db manual\n");
-                            }
-                            else{
-                                print_backup_help();
-                                return(22);
-                            }
-                        }else{
-                            print_backup_help();
-                            return(23);
-                        }
-                    }
-                    else if(strstr("online",para[4].content)){
-                        if(strstr("to",para[5].content)){
-                            if(strlen(para[6].content) != 0){
-                                printf("full online backup alldbs\n");
-                            }
-                            else{
-                                print_backup_help();
-                                return(24);
-                            }
-                        }
-                        else{
-                            print_backup_help();
-                            return(25);
-                        }
-                    }
-                    else{
-                        print_backup_help();
-                        return(26);
-                    }
-                }else if(strstr("incremental",para[3].content)){
-                    //pdb backup alldbs incremental online to '/dbbackup'
-                    if(strstr("online",para[4].content)){
-                        if(strstr("to",para[5].content)){
-                            if(strlen(para[6].content) != 0){
-                                printf("onlie incremental backup alldbs\n");
-                            }
-                            else{
-                                print_backup_help();
-                                return(27);
-                            }
-                        }
-                        else{
-                            print_backup_help();
-                            return(28);
-                        }
-                    }else{
-                        print_backup_help();
-                        return(29);
-                    }
-                }else{
+                else
+                {
                     print_backup_help();
-                    return(21);
-                } 
+                    return(2816);
+                }
             }
             else{
                 print_backup_help();
-                return(20);
+                return(2817);
             }
-           break;
+                    break;
         default:
             print_backup_help();
-            return(7);
+            return(29);
     }
     return(0);
 }
@@ -831,6 +797,9 @@ int pdb_shell(DBP *dbp){
 
 //main function.
 int main(int argc,char **argv){
+
+    int opsres = 0;
+
     PARA *para = NULL;
     DBP *dbp = NULL;
     if(argc <2){
@@ -878,7 +847,8 @@ int main(int argc,char **argv){
 
     
     if(strstr("backup",para[1].content)){
-        backup_database(para,dbp,innobak);
+        opsres = backup_database(para,dbp,innobak);
+        exit(opsres);
     }
     else if(strstr("restore",para[1].content)){
         print_restore_help();
