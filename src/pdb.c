@@ -356,6 +356,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     snprintf(ithrottle,DFTLENGTH/4,"--throttle=%d",innobak->throttle);
     snprintf(iuse_memory,DFTLENGTH/4,"--use_memory=%s",innobak->use_memory);
     snprintf(iconn,DFTLENGTH*2,"--host=%s --user=%s --password=%s --port=%d",dbp->host,dbp->user,dbp->pass,dbp->port);
+    snprintf(iextra_lsndir,DFTLENGTH/2,"--extra-lsndir=%s",innobak->extra_lsndir);
 
     switch(para->argclen){
         case 2:
@@ -398,7 +399,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                         if(strstr("to",para[5].content)){
                             if(strlen(para[6].content) != 0){
                                 //pdb backup all full online to '/dbbackup'
-                                snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iencrypt,iencrypt_key_file,istream,iparallel,para[6].content,">",para[6].content,"backup.xbstream");
+                                snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,istream,iparallel,para[6].content,">",para[6].content,"backup.xbstream");
                                 system(innobackupex);
                                 
                             }
@@ -568,7 +569,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                 if(strlen(para[7].content) != 0){
                                     //pdb backup all full online compress to '/dbbackup' 
                                     printf("pdb backup all full online compress to /dbbackup\n");
-                                    snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[7].content,">",para[7].content,"backup.xbstream");
+                                    snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[7].content,">",para[7].content,"backup.xbstream");
                                     system(innobackupex);
                                 }
                                 else{
