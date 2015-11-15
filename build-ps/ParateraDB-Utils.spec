@@ -1,5 +1,5 @@
 Name:       ParateraDB-Utils	
-Version:    1.0.7
+Version:    1.0.8
 Release:	1%{?dist}
 Summary:	ParateraDB Utils Tools.
 
@@ -82,57 +82,15 @@ install -D -m 0755 $MBD/support-scripts/pt-table-usage $RBR/%{_bindir}/pt-table-
 install -D -m 0755 $MBD/support-scripts/pt-upgrade $RBR/%{_bindir}/pt-upgrade
 install -D -m 0755 $MBD/support-scripts/pt-variable-advisor $RBR/%{_bindir}/pt-variable-advisor
 install -D -m 0755 $MBD/support-scripts/pt-visual-explain $RBR/%{_bindir}/pt-visual-explain
+install -D -m 0755 $MBD/support-scripts/post.sh $RBR/%{_bindir}/post.sh
 cp -r $MBD/doc/doc $RBR/%{_datadir}/
 cp -r $MBD/doc/man $RBR/%{_datadir}/
 
 %post 
-if [ -d /etc/sysconfig/pdb ];then
-    /bin/cat >innobackupex <<EOF
-innobak_bin = /usr/bin/innobackupex
-parallel = 4
-throttle = 4
-use_memory = 128MB
-encrypt = AES256
-encrypt_key_file = /etc/sysconfig/secure.key
-stream = xbstream
-extra_lsndir = /tmp
-hostname = developer-rhel6node1
-EOF
-
-    /bin/cat >db.properties <<EOF
-host = 127.0.0.1
-user = root
-socket = /var/lib/mysql/mysql.sock
-pass = k7e3h8q4
-port = 3306
-EOF
-
-else
-    /bin/mkdir -p /etc/sysconfig/pdb
-    /bin/cat >innobackupex <<EOF
-innobak_bin = /usr/bin/innobackupex
-parallel = 4
-throttle = 4
-use_memory = 128MB
-encrypt = AES256
-encrypt_key_file = /etc/sysconfig/secure.key
-stream = xbstream
-extra_lsndir = /tmp
-hostname = developer-rhel6node1
-EOF
-
-    /bin/cat >db.properties <<EOF
-host = 127.0.0.1
-user = root
-socket = /var/lib/mysql/mysql.sock
-pass = k7e3h8q4
-port = 3306
-EOF
-
-fi
-echo -n `openssl rand -base64 24` >/etc/sysconfig/secure.key
+%{_bindir}/post.sh
 
 %files
+%{_bindir}/post.sh
 %{_bindir}/CompressDbxBak
 %{_bindir}/DatabaseBackup
 %{_bindir}/NfsMount

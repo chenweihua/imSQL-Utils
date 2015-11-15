@@ -19,8 +19,8 @@ extern char **environ;
     .conn用于定义数据库链接信息
     .inno用户innobackupex的参数信息
 */
-char *pdb_conn_info = "/root/.conn";
-char *inno_conn_info = "/root/.inno";
+char *pdb_conn_info = "/etc/sysconfig/pdb/db.properties";
+char *inno_conn_info = "/etc/sysconfig/pdb/innobackupex";
 
 /*
     定义metadata的结构体，用于保存innobackupex的metadata数据。 
