@@ -94,6 +94,7 @@ typedef struct innobak{
     char *intodir;      //备份文件恢复路径,用于恢复操作
     BFN *backup_file_name;
     char *hostname;
+    char *incremental_lsn;
 }INNOBAK;
 
 int parse_database_conn_params(char *,DBP *);

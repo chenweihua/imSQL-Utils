@@ -360,6 +360,8 @@ static my_bool
 xtrabackup_read_metadata_from_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *metadata)
 {
 
+    int i =0;
+    int tmpi = 0;
     static int cres =0;
     char *query = NULL;
     
@@ -370,11 +372,9 @@ xtrabackup_read_metadata_from_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *met
 
     cres = connection_pdb_server(dbp,res,&row,query);
 
-    row = mysql_fetch_row(res);
-
     if(row != NULL){
 
-        for(i=0;i<mysql_num_fields(res);i++)
+        for(i=0;i<9;i++)
         {
             switch(i){
                 case 0:
@@ -490,10 +490,7 @@ create_full_backup_directory_and_metadata(INNOBAK *innobak,META *metadata)
     fclose(fp);
 
     return(TRUE);
-
 }
-
-
 
 /********************n***************************************************
  * database is exists?
@@ -569,6 +566,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
     char *iextra_lsndir = NULL;
     char *ibackup_file_name = NULL;
     char *innobackupex = NULL;
+    char *iincremental = NULL;
+    char *iincremental_lsn = NULL;
 
     timestamp_buf = (char *)malloc(sizeof(char)*DFTLENGTH/20);
     memset(timestamp_buf,0,DFTLENGTH/20);
@@ -586,6 +585,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
     iencrypt_key_file = (char *)malloc(sizeof(char)*DFTLENGTH/2);
     iextra_lsndir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
     ibackup_file_name= (char *)malloc(sizeof(char)*DFTLENGTH);
+    iincremental  = (char *)malloc(sizeof(char)*DFTLENGTH/8);
+    iincremental_lsn = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     
     memset(innobackupex,0,DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
@@ -600,6 +601,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
     memset(iencrypt_key_file,0,DFTLENGTH/2);
     memset(iextra_lsndir,0,DFTLENGTH/2);
     memset(ibackup_file_name,0,DFTLENGTH);
+    memset(iincremental,0,DFTLENGTH/8);
+    memset(iincremental_lsn,0,DFTLENGTH*2);
 
     /*
          获取必须的参数
@@ -706,6 +709,37 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                     if(strstr("online",para[4].content)){
                         if(strstr("to",para[5].content)){
                             if(strlen(para[6].content) != 0){
+                                /*得出当前时间戳*/ 
+                                ct = time(NULL);
+                                ptr = localtime(&ct);
+                                strftime(timestamp_buf,DFTLENGTH/20,"%Y%m%d%H%M%S",ptr);
+                                snprintf(innobak->backup_file_name->first_name,DFTLENGTH/8,"%s","all");
+                                snprintf(innobak->backup_file_name->hostname,DFTLENGTH/4,"%s",innobak->hostname);
+                                snprintf(innobak->backup_file_name->backup_type,DFTLENGTH/4,"%d",0);
+                                snprintf(innobak->backup_file_name->online_or_offline,DFTLENGTH/4,"%d",1);
+                                snprintf(innobak->backup_file_name->compress_or_no,DFTLENGTH/20,"%d",0);
+                                snprintf(innobak->backup_file_name->encrypt_or_no,DFTLENGTH/20,"%d",1);
+                                snprintf(innobak->backup_file_name->timestamp,DFTLENGTH/20,"%s",timestamp_buf);
+                                snprintf(innobak->backup_file_name->backup_number,DFTLENGTH/20,"%s","001");
+
+                                snprintf(meta->base_backup_directory,DFTLENGTH/2-1,"%s",para[6].content);
+
+                                snprintf(ibackup_file_name,DFTLENGTH,"%s.%s.%s%s%s%s.%s.%s",innobak->backup_file_name->first_name,innobak->backup_file_name->hostname,innobak->backup_file_name->backup_type,innobak->backup_file_name->online_or_offline,innobak->backup_file_name->compress_or_no,innobak->backup_file_name->encrypt_or_no,innobak->backup_file_name->timestamp,innobak->backup_file_name->backup_number);
+
+                                snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
+
+                                xtrabackup_read_metadata_from_db(dbp,res,row,meta);
+
+                                snprintf(iincremental,DFTLENGTH/8,"%s","--incremental");
+                                snprintf(iincremental_lsn,DFTLENGTH*2,"%s%lld","--incremental-lsn=",meta->metadata_to_lsn);
+                                /*拼接innodbbackupex 命令行*/
+                                snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,istream,iparallel,iincremental,iincremental_lsn,para[6].content,">",para[6].content,ibackup_file_name);
+                                system(innobackupex);
+
+                                read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
+
+                                xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+ 
                                 printf("onlie incremental backup all\n");
                             }
                             else{
@@ -1216,8 +1250,6 @@ int main(int argc,char **argv){
     metadata->metadata_last_lsn = 0;
     metadata->xtrabackup_compact = 0;
 
-
-
     /*
         初始化innobackupex参数 
     */
@@ -1232,6 +1264,8 @@ int main(int argc,char **argv){
     innobak->fromdir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
     innobak->intodir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
     innobak->hostname = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    innobak->incremental_lsn = (char *)malloc(sizeof(char)*DFTLENGTH);
+    innobak->extra_lsndir = (char *)malloc(sizeof(char)*DFTLENGTH/4);
 
     innobak->backup_file_name = (BFN *)malloc(sizeof(BFN));
     innobak->backup_file_name->first_name = (char *)malloc(sizeof(char)*DFTLENGTH/8);
@@ -1253,6 +1287,8 @@ int main(int argc,char **argv){
     memset(innobak->fromdir,0,DFTLENGTH/2);
     memset(innobak->intodir,0,DFTLENGTH/2);
     memset(innobak->hostname,0,DFTLENGTH/2);
+    memset(innobak->incremental_lsn,0,DFTLENGTH);
+    memset(innobak->extra_lsndir,0,DFTLENGTH/4);
 
     memset(innobak->backup_file_name->first_name,0,DFTLENGTH/8);
     memset(innobak->backup_file_name->hostname,0,DFTLENGTH/4);
