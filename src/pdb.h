@@ -4,6 +4,9 @@
 #include <unistd.h>
 #include <time.h>
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <mysql/my_global.h>
 #include <mysql/mysql.h>
 
@@ -18,6 +21,22 @@ extern char **environ;
 */
 char *pdb_conn_info = "/root/.conn";
 char *inno_conn_info = "/root/.inno";
+
+/*
+    定义metadata的结构体，用于保存innobackupex的metadata数据。 
+*/
+typedef struct metadata{
+    char *    metadata_type;
+    long long metadata_from_lsn;
+    long long metadata_to_lsn;
+    long long metadata_last_lsn;
+    int       xtrabackup_compact;
+    char *    base_backup_directory;
+    char *    backup_directory_name;
+    char *    baseon_backup;
+    char *    extra_lsndir;
+}META;
+    
 
 typedef struct dbparams{
     char * host;
