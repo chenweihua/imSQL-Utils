@@ -339,6 +339,7 @@ xtrabackup_write_metadata_into_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *me
     memset(query,0,DFTLENGTH*2);
 
     snprintf(query,DFTLENGTH*2-1,"INSERT INTO sysadmin.t_xtra_backup_metadata(metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir) VALUES('%s',%lld,%lld,%lld,%lld,'%s','%s','%s','%s')",metadata->metadata_type,(long long)metadata->metadata_from_lsn,(long long)metadata->metadata_to_lsn,(long long)metadata->metadata_last_lsn,(int)metadata->xtrabackup_compact,metadata->base_backup_directory,metadata->backup_directory_name,metadata->baseon_backup,metadata->extra_lsndir);
+
     cres = connection_pdb_server(dbp,res,&row,query);
     if(cres == 0){
         return(0);
@@ -348,6 +349,150 @@ xtrabackup_write_metadata_into_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *me
     }
  
 }
+
+/***********************************************************************
+ *Read backup meata info from MySQL Database.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+static my_bool
+xtrabackup_read_metadata_from_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *metadata)
+{
+
+    static int cres =0;
+    char *query = NULL;
+    
+    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    memset(query,0,DFTLENGTH*2);
+
+    snprintf(query,DFTLENGTH*2,"%s","SELECT metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir FROM sysadmin.t_xtra_backup_metadata WHERE metadata_type='full-backuped' and is_deleted = 0 ORDER BY id DESC LIMIT 1");
+
+    cres = connection_pdb_server(dbp,res,&row,query);
+
+    row = mysql_fetch_row(res);
+
+    if(row != NULL){
+
+        for(i=0;i<mysql_num_fields(res);i++)
+        {
+            switch(i){
+                case 0:
+                    sprintf(metadata->metadata_type,"%s",row[i]);
+                case 1:
+                    metadata->metadata_from_lsn = (row[i] !=NULL? atoll(row[i]):0);
+                case 2:
+                    metadata->metadata_to_lsn = (row[i] !=NULL? atoll(row[i]):0);
+                case 3:
+                    metadata->metadata_last_lsn= (row[i] !=NULL? atoll(row[i]):0);
+                case 4:
+                    metadata->xtrabackup_compact = (row[i] !=NULL? atoll(row[i]):0);
+                case 5:
+                    snprintf(metadata->base_backup_directory,511,row[i]);
+                case 6:
+                    snprintf(metadata->backup_directory_name,511,row[i]);
+                case 7:
+                    snprintf(metadata->baseon_backup,511,row[i]);
+                case 8:
+                    snprintf(metadata->extra_lsndir,511,row[i]);
+                default:
+                    tmpi=0;
+
+            }
+        }
+    }
+    else{
+        return(FALSE);
+    }
+    return(TRUE);
+}
+
+/***********************************************************************
+ *make metadata buffer.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+static
+void
+xtrabackup_print_metadata(META * metadata,char *buf, size_t buf_len)
+{
+    /* Use UINT64PF instead of LSN_PF here, as we have to maintain the file
+     *     format. */
+    snprintf(buf, buf_len,
+            "backup_type = %s\n"
+            "from_lsn = %lld\n" 
+            "to_lsn = %lld\n" 
+            "last_lsn = %lld\n" 
+            "base_backup_directory = %s\n"
+            "backup_directory_name = %s\n"
+            "baseon_backup = %s\n"
+            "compact = %d\n",
+            metadata->metadata_type,
+            metadata->metadata_from_lsn,
+            metadata->metadata_to_lsn,
+            metadata->metadata_last_lsn,
+            metadata->base_backup_directory,
+            metadata->backup_directory_name,
+            metadata->baseon_backup,
+            metadata->xtrabackup_compact ==TRUE);
+}
+
+
+/***********************************************************************
+ *create full backup directory for incremental backup.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+static my_bool
+create_full_backup_directory_and_metadata(INNOBAK *innobak,META *metadata)
+{
+
+    int len = 0;
+    FILE *fp = NULL;
+
+    static char *full_backup_directory = NULL;
+    static char *full_backup_metadata_file = NULL;
+    static char *buf = NULL;
+    full_backup_directory = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    memset(full_backup_directory,0,DFTLENGTH/2);
+    full_backup_metadata_file= (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    memset(full_backup_metadata_file,0,DFTLENGTH/2);
+    buf = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    memset(buf,0,DFTLENGTH*2);
+
+    snprintf(full_backup_metadata_file,511,"%s/xtrabackup_checkpoints",innobak->extra_lsndir);
+
+
+    umask(S_IWGRP | S_IWOTH);
+
+    mkdir(full_backup_directory,0777);
+
+    xtrabackup_print_metadata(metadata,buf,2047);
+
+    len = strlen(buf);
+
+    fp = fopen(full_backup_metadata_file, "w");
+    if(!fp) {
+        perror("fopen()");
+        return(FALSE);
+    }
+    if (fwrite(buf, len, 1, fp) < 1) {
+        fclose(fp);
+        return(FALSE);
+    }
+
+    free(full_backup_directory);
+    free(full_backup_metadata_file);
+    free(buf);
+
+    fclose(fp);
+
+    return(TRUE);
+
+}
+
 
 
 /********************n***************************************************
