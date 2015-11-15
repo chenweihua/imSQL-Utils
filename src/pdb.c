@@ -622,7 +622,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
     iincremental  = (char *)malloc(sizeof(char)*DFTLENGTH/8);
     iincremental_lsn = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     ibaseon_backup = (char *)malloc(sizeof(char)*DFTLENGTH/8);
-    
+
     memset(innobackupex,0,DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
     memset(iconn,0,DFTLENGTH*2);
@@ -641,8 +641,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
     memset(ibaseon_backup,0,DFTLENGTH/8);
 
     /*
-         获取必须的参数
-    */
+       获取必须的参数
+       */
     //获取数据库参数
     pres = parse_database_conn_params(pdb_conn_info,dbp);
     //获取innobackupex参数
@@ -724,7 +724,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                 read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
 
                                 xtrabackup_write_metadata_into_db(dbp,res,row,meta);
-                                
+
                             }
                             else{
                                 print_backup_help();
@@ -779,7 +779,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                 snprintf(meta->backup_directory_name,DFTLENGTH*2,"%s",ibackup_file_name);
 
                                 xtrabackup_write_metadata_into_db(dbp,res,row,meta);
- 
+
                                 printf("onlie incremental backup all\n");
                             }
                             else{
@@ -866,24 +866,48 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                             return(275);
                         }
                     }
+                    //pdb backup db basedb incremental online to '/dbbackup'
                     else if(strstr(para[4].content,"incremental")){
                         if(strstr(para[5].content,"online")){
                             if(strstr(para[6].content,"to")){
-                                snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-                                cres = connection_pdb_server(dbp,res,&row,query);
-                                if(cres == 0){
-                                    if(atoi(row[0]) == 1){
-                                        //pdb backup db basedb incremental online to '/dbbackup' 
-                                        //snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                        //i=system(innobackupex);
-                                        if(i == 0){
-                                            printf("Backup Success!\n");
-                                            return(0);
-                                        }
-                                        else{
-                                            printf("Backup Failure!\n");
-                                            return(271);
-                                        }
+                                if(strlen(para[7].content) != 0){
+                                    cres = database_is_exists(dbp,res,&row,para);
+                                    if(cres >0){
+                                        /*得出当前时间戳*/ 
+                                        ct = time(NULL);
+                                        ptr = localtime(&ct);
+                                        strftime(timestamp_buf,DFTLENGTH/20,"%Y%m%d%H%M%S",ptr);
+                                        snprintf(innobak->backup_file_name->first_name,DFTLENGTH/8,"%s",para[3].content);
+                                        snprintf(innobak->backup_file_name->hostname,DFTLENGTH/4,"%s",innobak->hostname);
+                                        snprintf(innobak->backup_file_name->backup_type,DFTLENGTH/4,"%d",1);
+                                        snprintf(innobak->backup_file_name->online_or_offline,DFTLENGTH/4,"%d",1);
+                                        snprintf(innobak->backup_file_name->compress_or_no,DFTLENGTH/20,"%d",0);
+                                        snprintf(innobak->backup_file_name->encrypt_or_no,DFTLENGTH/20,"%d",1);
+                                        snprintf(innobak->backup_file_name->timestamp,DFTLENGTH/20,"%s",timestamp_buf);
+                                        snprintf(innobak->backup_file_name->backup_number,DFTLENGTH/20,"%s","001");
+
+                                        snprintf(meta->base_backup_directory,DFTLENGTH/2-1,"%s",para[7].content);
+
+                                        snprintf(ibackup_file_name,DFTLENGTH,"%s.%s.%s%s%s%s.%s.%s",innobak->backup_file_name->first_name,innobak->backup_file_name->hostname,innobak->backup_file_name->backup_type,innobak->backup_file_name->online_or_offline,innobak->backup_file_name->compress_or_no,innobak->backup_file_name->encrypt_or_no,innobak->backup_file_name->timestamp,innobak->backup_file_name->backup_number);
+
+                                        snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
+
+                                        read_full_backup_name_from_db(dbp,res,row,ibaseon_backup);
+                                        xtrabackup_read_metadata_from_db(dbp,res,row,meta);
+
+                                        snprintf(iincremental,DFTLENGTH/8,"%s","--incremental");
+                                        snprintf(iincremental_lsn,DFTLENGTH*2,"%s%lld","--incremental-lsn=",meta->metadata_to_lsn);
+                                        /*拼接innodbbackupex 命令行*/
+                                        snprintf(innobackupex,DFTLENGTH*2,"%s %s %s'mysql sysadmin %s' %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,"--databases=",para[3].content,iextra_lsndir,iencrypt,iencrypt_key_file,istream,iparallel,iincremental,iincremental_lsn,para[7].content,">",para[7].content,ibackup_file_name);
+                                        system(innobackupex);
+
+                                        read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
+
+                                        snprintf(meta->baseon_backup,DFTLENGTH/8,"%s",ibaseon_backup);
+                                        snprintf(meta->backup_directory_name,DFTLENGTH*2,"%s",ibackup_file_name);
+
+                                        xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+
                                     }
                                     else{
                                         printf("No %s\n",para[3].content);
@@ -891,7 +915,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                     }
                                 }
                                 else{
-                                    printf("connection_pdb_server failure\n");
+                                    print_backup_help();
                                     return(273);
                                 }
                             }
@@ -966,7 +990,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                     snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
                                     snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[7].content,">",para[7].content,ibackup_file_name);
                                     system(innobackupex);
-                                    
+
                                     read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
 
                                     xtrabackup_write_metadata_into_db(dbp,res,row,meta);
@@ -1130,26 +1154,50 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                             print_backup_help();
                             return(285);
                         }
-                }
-                else if(strstr(para[4].content,"incremental")){
-                    if(strstr("online",para[5].content)){
-                        if(strstr("compress",para[6].content)){
-                            if(strstr("to",para[7].content)){
-                                if(strlen(para[8].content) != 0){
-                                    snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-                                    cres = connection_pdb_server(dbp,res,&row,query);
-                                    if(cres == 0){
-                                        if(atoi(row[0]) == 1){
+                    }
+                    else if(strstr(para[4].content,"incremental")){
+                        if(strstr("online",para[5].content)){
+                            if(strstr("compress",para[6].content)){
+                                if(strstr("to",para[7].content)){
+                                    if(strlen(para[8].content) != 0){
+                                        cres = database_is_exists(dbp,res,&row,para);
+                                        if(cres >0){
                                             //pdb backup db basedb incremental online compress to '/dbbackup' 
-                                            //snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                            //i=system(innobackupex);
-                                            if(i == 0){
-                                                printf("Backup Success!\n");
-                                            }
-                                            else{
-                                                printf("Backup Failure!\n");
-                                                return(288);
-                                            }
+                                            /*得出当前时间戳*/ 
+                                            ct = time(NULL);
+                                            ptr = localtime(&ct);
+                                            strftime(timestamp_buf,DFTLENGTH/20,"%Y%m%d%H%M%S",ptr);
+                                            snprintf(innobak->backup_file_name->first_name,DFTLENGTH/8,"%s",para[3].content);
+                                            snprintf(innobak->backup_file_name->hostname,DFTLENGTH/4,"%s",innobak->hostname);
+                                            snprintf(innobak->backup_file_name->backup_type,DFTLENGTH/4,"%d",1);
+                                            snprintf(innobak->backup_file_name->online_or_offline,DFTLENGTH/4,"%d",1);
+                                            snprintf(innobak->backup_file_name->compress_or_no,DFTLENGTH/20,"%d",1);
+                                            snprintf(innobak->backup_file_name->encrypt_or_no,DFTLENGTH/20,"%d",1);
+                                            snprintf(innobak->backup_file_name->timestamp,DFTLENGTH/20,"%s",timestamp_buf);
+                                            snprintf(innobak->backup_file_name->backup_number,DFTLENGTH/20,"%s","001");
+
+                                            snprintf(meta->base_backup_directory,DFTLENGTH/2-1,"%s",para[8].content);
+
+                                            snprintf(ibackup_file_name,DFTLENGTH,"%s.%s.%s%s%s%s.%s.%s",innobak->backup_file_name->first_name,innobak->backup_file_name->hostname,innobak->backup_file_name->backup_type,innobak->backup_file_name->online_or_offline,innobak->backup_file_name->compress_or_no,innobak->backup_file_name->encrypt_or_no,innobak->backup_file_name->timestamp,innobak->backup_file_name->backup_number);
+
+                                            snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
+
+                                            read_full_backup_name_from_db(dbp,res,row,ibaseon_backup);
+                                            xtrabackup_read_metadata_from_db(dbp,res,row,meta);
+
+                                            snprintf(iincremental,DFTLENGTH/8,"%s","--incremental");
+                                            snprintf(iincremental_lsn,DFTLENGTH*2,"%s%lld","--incremental-lsn=",meta->metadata_to_lsn);
+                                            /*拼接innodbbackupex 命令行*/
+                                            snprintf(innobackupex,DFTLENGTH*2,"%s %s %s'mysql sysadmin %s' %s %s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,"--databases=",para[3].content,iextra_lsndir,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,iincremental,iincremental_lsn,para[8].content,">",para[8].content,ibackup_file_name);
+                                            system(innobackupex);
+
+                                            read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
+
+                                            snprintf(meta->baseon_backup,DFTLENGTH/8,"%s",ibaseon_backup);
+                                            snprintf(meta->backup_directory_name,DFTLENGTH*2,"%s",ibackup_file_name);
+
+                                            xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+
                                         }
                                         else{
                                             printf("No %s\n",para[3].content);
@@ -1158,7 +1206,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                     }
                                     else{
-                                        printf("connection_pdb_server failure\n");
+                                        print_backup_help();
                                         return(2810);
                                     }
                                 }
@@ -1183,23 +1231,17 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                         return(2814);
                     }
                 }
-                else{
-
+                else
+                {
                     print_backup_help();
-                    return(2815);
+                    return(2816);
                 }
             }
-            else
-            {
+            else{
                 print_backup_help();
-                return(2816);
+                return(2817);
             }
-    }
-    else{
-        print_backup_help();
-        return(2817);
-    }
-    break;
+            break;
         default:
             print_backup_help();
             return(29);
