@@ -228,6 +228,51 @@ int connection_pdb_server(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,char *query){
     return(0);
 }
 
+
+/********************n***************************************************
+ * database is exists?
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int database_is_exists(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para){
+    int cres = 0;
+    int fres = 0;
+    char *query = NULL;
+    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    memset(query,0,DFTLENGTH*2);
+
+    snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
+                                
+    cres = connection_pdb_server(dbp,res,row,query);
+    if(cres == 0){
+       fres = atoi(*row[0]);
+    }
+    return(fres);
+}
+
+
+/********************n***************************************************
+ * database list
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int get_database_list(void){
+    return(0);
+}
+
+
+/********************n***************************************************
+ * innobackupex database backup.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int innobackupex_database_backup(){
+    return(0);
+}
+
 /********************n***************************************************
  * backup database operation.
  *@return TRUE on success,FALSE on failure.
@@ -374,12 +419,10 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                     if(strstr(para[4].content,"full")){
                         if(strstr(para[5].content,"online")){
                             if(strstr(para[6].content,"to")){
-                                snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-                                cres = connection_pdb_server(dbp,res,&row,query);
-                                if(cres == 0){
-                                    if(atoi(row[0]) == 1){
+                                cres = database_is_exists(dbp,res,&row,para);
+                                if(cres >0){
                                         //pdb backup db basedb full online to '/dbbackup' 
-                                        snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
+                                        snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s    >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
                                         i=system(innobackupex);
                                         if(i == 0){
                                             printf("Backup Success!\n");
@@ -394,11 +437,6 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                         printf("No %s\n",para[3].content);
                                         return(272);
                                     }
-                                }
-                                else{
-                                    printf("connection_pdb_server failure\n");
-                                    return(273);
-                                }
                             }
                             else{
                                 print_backup_help();
