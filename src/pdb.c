@@ -537,7 +537,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                 snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,istream,iparallel,para[6].content,">",para[6].content,ibackup_file_name);
                                 system(innobackupex);
 
-                                read_xtrabackup_checkpoint_file("/tmp",meta);
+                                read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
 
                                 xtrabackup_write_metadata_into_db(dbp,res,row,meta);
                                 
@@ -726,7 +726,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                     snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[7].content,">",para[7].content,ibackup_file_name);
                                     system(innobackupex);
                                     
-                                    read_xtrabackup_checkpoint_file("/tmp",meta);
+                                    read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
 
                                     xtrabackup_write_metadata_into_db(dbp,res,row,meta);
 
