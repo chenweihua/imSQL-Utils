@@ -418,8 +418,16 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                 ct = time(NULL);
                                 ptr = localtime(&ct);
                                 strftime(timestamp_buf,DFTLENGTH/20,"%Y%m%d%H%M%S",ptr);
+                                snprintf(innobak->backup_file_name->first_name,DFTLENGTH/8,"%s","all");
+                                snprintf(innobak->backup_file_name->hostname,DFTLENGTH/4,"%s",innobak->hostname);
+                                snprintf(innobak->backup_file_name->backup_type,DFTLENGTH/4,"%d",0);
+                                snprintf(innobak->backup_file_name->online_or_offline,DFTLENGTH/4,"%d",1);
+                                snprintf(innobak->backup_file_name->compress_or_no,DFTLENGTH/20,"%d",0);
+                                snprintf(innobak->backup_file_name->encrypt_or_no,DFTLENGTH/20,"%d",1);
+                                snprintf(innobak->backup_file_name->timestamp,DFTLENGTH/20,"%s",timestamp_buf);
+                                snprintf(innobak->backup_file_name->backup_number,DFTLENGTH/20,"%s","001");
+                                snprintf(ibackup_file_name,DFTLENGTH,"%s.%s.%s%s%s%s.%s.%s",innobak->backup_file_name->first_name,innobak->backup_file_name->hostname,innobak->backup_file_name->backup_type,innobak->backup_file_name->online_or_offline,innobak->backup_file_name->compress_or_no,innobak->backup_file_name->encrypt_or_no,innobak->backup_file_name->timestamp,innobak->backup_file_name->backup_number);
 
-                                snprintf(ibackup_file_name,DFTLENGTH,"%s.%d.%s.%s.%s","ALL",0,innobak->hostname,timestamp_buf,"001");
                                 /*拼接innodbbackupex 命令行*/
                                 snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,istream,iparallel,para[6].content,">",para[6].content,ibackup_file_name);
                                 system(innobackupex);
@@ -594,8 +602,15 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                     ct = time(NULL);
                                     ptr = localtime(&ct);
                                     strftime(timestamp_buf,DFTLENGTH/20,"%Y%m%d%H%M%S",ptr);
-
-                                    snprintf(ibackup_file_name,DFTLENGTH,"%s.%d.%s.%s.%s","ALL",0,innobak->hostname,timestamp_buf,"001");
+                                    snprintf(innobak->backup_file_name->first_name,DFTLENGTH/8,"%s","all");
+                                    snprintf(innobak->backup_file_name->hostname,DFTLENGTH/4,"%s",innobak->hostname);
+                                    snprintf(innobak->backup_file_name->backup_type,DFTLENGTH/4,"%d",0);
+                                    snprintf(innobak->backup_file_name->online_or_offline,DFTLENGTH/4,"%d",1);
+                                    snprintf(innobak->backup_file_name->compress_or_no,DFTLENGTH/20,"%d",1);
+                                    snprintf(innobak->backup_file_name->encrypt_or_no,DFTLENGTH/20,"%d",1);
+                                    snprintf(innobak->backup_file_name->timestamp,DFTLENGTH/20,"%s",timestamp_buf);
+                                    snprintf(innobak->backup_file_name->backup_number,DFTLENGTH/20,"%s","001");
+                                    snprintf(ibackup_file_name,DFTLENGTH,"%s.%s.%s%s%s%s.%s.%s",innobak->backup_file_name->first_name,innobak->backup_file_name->hostname,innobak->backup_file_name->backup_type,innobak->backup_file_name->online_or_offline,innobak->backup_file_name->compress_or_no,innobak->backup_file_name->encrypt_or_no,innobak->backup_file_name->timestamp,innobak->backup_file_name->backup_number);
                                     printf("pdb backup all full online compress to /dbbackup\n");
                                     snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[7].content,">",para[7].content,ibackup_file_name);
                                     system(innobackupex);
@@ -952,7 +967,6 @@ int main(int argc,char **argv){
     memset(innobak->todir,0,DFTLENGTH/2);
     memset(innobak->fromdir,0,DFTLENGTH/2);
     memset(innobak->intodir,0,DFTLENGTH/2);
-    memset(innobak->backup_file_name,0,DFTLENGTH/2);
     memset(innobak->hostname,0,DFTLENGTH/2);
 
     memset(innobak->backup_file_name->first_name,0,DFTLENGTH/8);
