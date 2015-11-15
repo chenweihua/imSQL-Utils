@@ -1,5 +1,5 @@
 Name:       ParateraDB-Utils	
-Version:    1.0.2
+Version:    1.0.4
 Release:	1%{?dist}
 Summary:	ParateraDB Utils Tools.
 
@@ -43,6 +43,7 @@ RBR=$RPM_BUILD_ROOT
 MBD=$RPM_BUILD_DIR/%{name}
 
 install -D -m 0755 $MBD/read_metadata $RBR/%{_bindir}/read_metadata
+install -D -m 0755 $MBD/pdb $RBR/%{_bindir}/pdb
 install -D -m 0755 $MBD/registe_metadata $RBR/%{_bindir}/registe_metadata
 install -D -m 0755 $MBD/support-scripts/DatabaseBackup.sh $RBR/%{_bindir}/DatabaseBackup
 install -D -m 0755 $MBD/support-scripts/CompressDbxBak.sh $RBR/%{_bindir}/CompressDbxBak
@@ -92,6 +93,7 @@ cp -r $MBD/doc/man $RBR/%{_datadir}/
 %{_bindir}/RemoveDbxBak
 %{_bindir}/SyncDBxBak
 %{_bindir}/read_metadata
+%{_bindir}/pdb
 %{_bindir}/registe_metadata
 %{_bindir}/pt-align
 %{_bindir}/pt-archiver

@@ -195,6 +195,23 @@ int parse_innobackupex_params(char *filename,INNOBAK *innobak){
         res = 35;
         goto end;
     }
+    if(fscanf(fp,"encrypt = %s\n",innobak->encrypt ) != 1){
+        res = 35;
+        goto end;
+    }
+    if(fscanf(fp,"encrypt_key_file = %s\n",innobak->encrypt_key_file ) != 1){
+        res = 35;
+        goto end;
+    }
+    if(fscanf(fp,"stream = %s\n",innobak->stream ) != 1){
+        res = 35;
+        goto end;
+    }
+    if(fscanf(fp,"extra_lsndir = %s\n",innobak->extra_lsndir) != 1){
+        res = 35;
+        goto end;
+    }
+    innobak->compress_threads = innobak->parallel*2;
 end:
     fclose(fp);
     return(res);
@@ -283,44 +300,62 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     MYSQL_RES *res = NULL;
     MYSQL_ROW row;
     unsigned int i,cres,pres;
-    char *query = NULL;
+
+    char *query = NULL;                 //缓冲查询语句
+    char *iconn = NULL;                 //保存连接数据库的详细信息
+    char *istream = NULL;               //保存innobackupex备份方法
+    char *icompress = NULL;             //保存是否压缩
+    char *iuse_memory = NULL;           //保存innobackupex内存占用
+    char *icompress_threads = NULL;     //保存压缩线程
+    char *iparallel = NULL;             //保存并行参数
+    char *ithrottle = NULL;             //保存磁盘iops参数
+    char *iencrypt = NULL;              //保存加密参数
+    char *iencrypt_key_file = NULL;     //保存加密文件路径
+    char *iextra_lsndir = NULL;
     char *innobackupex = NULL;
 
-    char *iinnobak_bin = NULL;
-    char *istream = NULL;
-    char *icompress = NULL;
-    char *iuse_memory = NULL;
-    char *icompress_threads = NULL;
-    char *iparallel = NULL;
-    char *ithrottle = NULL;
-
-    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     innobackupex = (char *)malloc(sizeof(char)*DFTLENGTH*2);
-    iinnobak_bin = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    iconn = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     istream = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     icompress = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     iuse_memory = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     icompress_threads= (char *)malloc(sizeof(char)*DFTLENGTH/4);
     iparallel = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     ithrottle = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    iencrypt = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    iencrypt_key_file = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    iextra_lsndir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
     
-    memset(query,0,DFTLENGTH*2);
     memset(innobackupex,0,DFTLENGTH*2);
-    memset(iinnobak_bin,0,DFTLENGTH/4);
+    memset(query,0,DFTLENGTH*2);
+    memset(iconn,0,DFTLENGTH*2);
     memset(istream,0,DFTLENGTH/4);
     memset(icompress,0,DFTLENGTH/4);
     memset(iuse_memory,0,DFTLENGTH/4);
     memset(iparallel,0,DFTLENGTH/4);
     memset(ithrottle,0,DFTLENGTH/4);
     memset(icompress_threads,0,DFTLENGTH/4);
+    memset(iencrypt,0,DFTLENGTH/4);
+    memset(iencrypt_key_file,0,DFTLENGTH/2);
+    memset(iextra_lsndir,0,DFTLENGTH/2);
 
+    /*
+         获取必须的参数
+    */
+
+    //获取数据库参数
     pres = parse_database_conn_params(pdb_conn_info,dbp);
-
+    //获取innobackupex参数
     parse_innobackupex_params(inno_conn_info,innobak);
-    snprintf(iinnobak_bin,DFTLENGTH/4,"%s",innobak->innobak_bin);
+    snprintf(istream,DFTLENGTH/4,"--stream=%s",innobak->stream);
     snprintf(iparallel,DFTLENGTH/4,"--parallel=%d",innobak->parallel);
+    snprintf(icompress_threads,DFTLENGTH/4,"--compress-threads=%d",innobak->compress_threads);
+    snprintf(iencrypt,DFTLENGTH/4,"--encrypt=%s",innobak->encrypt);
+    snprintf(iencrypt_key_file,DFTLENGTH/2,"--encrypt-key-file=%s",innobak->encrypt_key_file);
     snprintf(ithrottle,DFTLENGTH/4,"--throttle=%d",innobak->throttle);
     snprintf(iuse_memory,DFTLENGTH/4,"--use_memory=%s",innobak->use_memory);
+    snprintf(iconn,DFTLENGTH*2,"--host=%s --user=%s --password=%s --port=%d",dbp->host,dbp->user,dbp->pass,dbp->port);
 
     switch(para->argclen){
         case 2:
@@ -363,7 +398,9 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                         if(strstr("to",para[5].content)){
                             if(strlen(para[6].content) != 0){
                                 //pdb backup all full online to '/dbbackup'
-                                printf("full online backup all\n");
+                                snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iencrypt,iencrypt_key_file,istream,iparallel,para[6].content,">",para[6].content,"backup.xbstream");
+                                system(innobackupex);
+                                
                             }
                             else{
                                 print_backup_help();
@@ -422,8 +459,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                 cres = database_is_exists(dbp,res,&row,para);
                                 if(cres >0){
                                         //pdb backup db basedb full online to '/dbbackup' 
-                                        snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s    >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                        i=system(innobackupex);
+                                        //snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s    >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
+                                        //i=system(innobackupex);
                                         if(i == 0){
                                             printf("Backup Success!\n");
                                             return(0);
@@ -456,8 +493,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                 if(cres == 0){
                                     if(atoi(row[0]) == 1){
                                         //pdb backup db basedb incremental online to '/dbbackup' 
-                                        snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                        i=system(innobackupex);
+                                        //snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
+                                        //i=system(innobackupex);
                                         if(i == 0){
                                             printf("Backup Success!\n");
                                             return(0);
@@ -531,6 +568,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                 if(strlen(para[7].content) != 0){
                                     //pdb backup all full online compress to '/dbbackup' 
                                     printf("pdb backup all full online compress to /dbbackup\n");
+                                    snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[7].content,">",para[7].content,"backup.xbstream");
+                                    system(innobackupex);
                                 }
                                 else{
                                     print_backup_help();
@@ -610,8 +649,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                         if(cres == 0){
                                             if(atoi(row[0]) == 1){
                                                 //pdb backup db basedb full online compress to '/dbbackup' 
-                                                snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                                i=system(innobackupex);
+                                                //snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
+                                                //i=system(innobackupex);
                                                 if(i == 0){
                                                     printf("Backup Success!\n");
                                                 }
@@ -660,8 +699,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                         if(cres == 0){
                                             if(atoi(row[0]) == 1){
                                                 //pdb backup db basedb incremental online compress to '/dbbackup' 
-                                                snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
-                                                i=system(innobackupex);
+                                                //snprintf(innobackupex,DFTLENGTH*2,"%s --password=%s %s %s %s %s %s /root/backup  >/root/backup/2.tar",iinnobak_bin,dbp->pass,istream,icompress,icompress_threads,iparallel,ithrottle);
+                                                //i=system(innobackupex);
                                                 if(i == 0){
                                                     printf("Backup Success!\n");
                                                 }
@@ -833,32 +872,55 @@ int pdb_shell(DBP *dbp){
     return(pres);
 }
 
-//main function.
+/*
+    主函数 
+*/
 int main(int argc,char **argv){
 
     int opsres = 0;
-
     PARA *para = NULL;
+
+    /*
+        判断参数个数是否复合要求
+    */
     DBP *dbp = NULL;
     if(argc <2){
         print_main_help();
         exit(1); 
     };
 
-    //initialize innobak instance;
+    /*
+        初始化innobackupex参数 
+    */
     INNOBAK *innobak;
     innobak = (INNOBAK *)malloc(sizeof(INNOBAK));
     innobak->innobak_bin = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    innobak->encrypt = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    innobak->encrypt_key_file = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    innobak->stream = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     innobak->use_memory = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     innobak->todir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    innobak->fromdir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    innobak->intodir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    innobak->backup_file_name = (char *)malloc(sizeof(char)*DFTLENGTH/2);
 
     memset(innobak->innobak_bin,0,DFTLENGTH/4);
+    memset(innobak->encrypt,0,DFTLENGTH/4);
+    memset(innobak->encrypt_key_file,0,DFTLENGTH/4);
+    memset(innobak->stream,0,DFTLENGTH/4);
     memset(innobak->use_memory,0,DFTLENGTH/4);
     memset(innobak->todir,0,DFTLENGTH/2);
-    innobak->parallel = 4;
-    innobak->throttle = 500;
+    memset(innobak->fromdir,0,DFTLENGTH/2);
+    memset(innobak->intodir,0,DFTLENGTH/2);
+    memset(innobak->backup_file_name,0,DFTLENGTH/2);
+    innobak->parallel = 0;
+    innobak->throttle = 0;
+    innobak->compress = 0;
+    innobak->compress_threads =0;
     
-    //initialize dbp instance.
+    /*
+        初始化数据库连接信息变量 
+    */
     dbp = (DBP *)malloc(sizeof(DBP));
     dbp->host = (char *)malloc(sizeof(char)*(DFTLENGTH/8));
     dbp->user = (char *)malloc(sizeof(char)*(DFTLENGTH/8));
@@ -883,7 +945,10 @@ int main(int argc,char **argv){
         sprintf(para[i].content,"%s",argv[i]);
     }
 
-    
+   
+   /*
+        开始解析命令行参数
+   */ 
     if(strstr("backup",para[1].content)){
         opsres = backup_database(para,dbp,innobak);
         exit(opsres);
