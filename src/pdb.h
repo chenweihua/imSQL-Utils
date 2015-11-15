@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <mysql/my_global.h>
 #include <mysql/mysql.h>
@@ -32,6 +33,32 @@ typedef struct params{
     char * content;
 }PARA;
 
+typedef struct backup_file_name{
+    /*
+        备份文件名称一般为:
+    first_name.hostname.backup_type,online_or_offline,compress_or_no,encrypt_or_no.timestamp.backup_number
+        示例：
+    all.hostname.0111.20151111154323.001
+    parafiledb.rhel5.0010.20151111123212.001 
+    */
+    char *first_name;
+    //备份开始名称，所有数据库用all，单个数据库就用这个数据库的名称.
+    char *hostname;
+    //备份程序运行在的机器的主机名。
+    char *backup_type;
+    //完整备份0，还是增量备份1.
+    char *online_or_offline;
+    //在线备份1,还是离线备份0.
+    char *compress_or_no;
+    //压缩用1表示，没压缩用0表示
+    char *encrypt_or_no;
+    //加密用1表示，没加密用0表示
+    char *timestamp;
+    //备份的时间戳
+    char *backup_number;
+    //当前时间备份的编号
+}BFN;
+
 typedef struct innobak{
     char *extra_lsndir;
     char *innobak_bin;  //innobackupex执行文件路径
@@ -46,7 +73,8 @@ typedef struct innobak{
     char *todir;        //备份文件存储路径,用于备份操作
     char *fromdir;      //备份文件存储路径,用于恢复操作
     char *intodir;      //备份文件恢复路径,用于恢复操作
-    char *backup_file_name;
+    BFN *backup_file_name;
+    char *hostname;
 }INNOBAK;
 
 int parse_database_conn_params(char *,DBP *);

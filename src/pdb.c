@@ -211,6 +211,10 @@ int parse_innobackupex_params(char *filename,INNOBAK *innobak){
         res = 35;
         goto end;
     }
+    if(fscanf(fp,"hostname = %s\n",innobak->hostname ) != 1){
+        res = 35;
+        goto end;
+    }
     innobak->compress_threads = innobak->parallel*2;
 end:
     fclose(fp);
@@ -297,9 +301,15 @@ int innobackupex_database_backup(){
  * Date:20151019PM1318
 */
 int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
+    struct tm *ptr;
+    time_t ct;
+    char *timestamp_buf = NULL;
+
     MYSQL_RES *res = NULL;
     MYSQL_ROW row;
     unsigned int i,cres,pres;
+
+
 
     char *query = NULL;                 //缓冲查询语句
     char *iconn = NULL;                 //保存连接数据库的详细信息
@@ -312,7 +322,11 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     char *iencrypt = NULL;              //保存加密参数
     char *iencrypt_key_file = NULL;     //保存加密文件路径
     char *iextra_lsndir = NULL;
+    char *ibackup_file_name = NULL;
     char *innobackupex = NULL;
+
+    timestamp_buf = (char *)malloc(sizeof(char)*DFTLENGTH/20);
+    memset(timestamp_buf,0,DFTLENGTH/20);
 
     innobackupex = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
@@ -326,6 +340,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     iencrypt = (char *)malloc(sizeof(char)*DFTLENGTH/4);
     iencrypt_key_file = (char *)malloc(sizeof(char)*DFTLENGTH/2);
     iextra_lsndir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    ibackup_file_name= (char *)malloc(sizeof(char)*DFTLENGTH);
     
     memset(innobackupex,0,DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
@@ -339,11 +354,11 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
     memset(iencrypt,0,DFTLENGTH/4);
     memset(iencrypt_key_file,0,DFTLENGTH/2);
     memset(iextra_lsndir,0,DFTLENGTH/2);
+    memset(ibackup_file_name,0,DFTLENGTH);
 
     /*
          获取必须的参数
     */
-
     //获取数据库参数
     pres = parse_database_conn_params(pdb_conn_info,dbp);
     //获取innobackupex参数
@@ -399,7 +414,14 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                         if(strstr("to",para[5].content)){
                             if(strlen(para[6].content) != 0){
                                 //pdb backup all full online to '/dbbackup'
-                                snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,istream,iparallel,para[6].content,">",para[6].content,"backup.xbstream");
+                                /*得出当前时间戳*/ 
+                                ct = time(NULL);
+                                ptr = localtime(&ct);
+                                strftime(timestamp_buf,DFTLENGTH/20,"%Y%m%d%H%M%S",ptr);
+
+                                snprintf(ibackup_file_name,DFTLENGTH,"%s.%d.%s.%s.%s","ALL",0,innobak->hostname,timestamp_buf,"001");
+                                /*拼接innodbbackupex 命令行*/
+                                snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,istream,iparallel,para[6].content,">",para[6].content,ibackup_file_name);
                                 system(innobackupex);
                                 
                             }
@@ -568,8 +590,14 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                             if(strstr("to",para[6].content)){
                                 if(strlen(para[7].content) != 0){
                                     //pdb backup all full online compress to '/dbbackup' 
+                                    /*得出当前时间戳*/ 
+                                    ct = time(NULL);
+                                    ptr = localtime(&ct);
+                                    strftime(timestamp_buf,DFTLENGTH/20,"%Y%m%d%H%M%S",ptr);
+
+                                    snprintf(ibackup_file_name,DFTLENGTH,"%s.%d.%s.%s.%s","ALL",0,innobak->hostname,timestamp_buf,"001");
                                     printf("pdb backup all full online compress to /dbbackup\n");
-                                    snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[7].content,">",para[7].content,"backup.xbstream");
+                                    snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[7].content,">",para[7].content,ibackup_file_name);
                                     system(innobackupex);
                                 }
                                 else{
@@ -903,7 +931,18 @@ int main(int argc,char **argv){
     innobak->todir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
     innobak->fromdir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
     innobak->intodir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
-    innobak->backup_file_name = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    innobak->hostname = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+
+    innobak->backup_file_name = (BFN *)malloc(sizeof(BFN));
+    innobak->backup_file_name->first_name = (char *)malloc(sizeof(char)*DFTLENGTH/8);
+    innobak->backup_file_name->hostname = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    innobak->backup_file_name->backup_type = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    innobak->backup_file_name->online_or_offline = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    innobak->backup_file_name->compress_or_no = (char *)malloc(sizeof(char)*DFTLENGTH/20);
+    innobak->backup_file_name->encrypt_or_no = (char *)malloc(sizeof(char)*DFTLENGTH/20);
+    innobak->backup_file_name->timestamp = (char *)malloc(sizeof(char)*DFTLENGTH/20);
+    innobak->backup_file_name->backup_number = (char *)malloc(sizeof(char)*DFTLENGTH/20);
+
 
     memset(innobak->innobak_bin,0,DFTLENGTH/4);
     memset(innobak->encrypt,0,DFTLENGTH/4);
@@ -914,6 +953,17 @@ int main(int argc,char **argv){
     memset(innobak->fromdir,0,DFTLENGTH/2);
     memset(innobak->intodir,0,DFTLENGTH/2);
     memset(innobak->backup_file_name,0,DFTLENGTH/2);
+    memset(innobak->hostname,0,DFTLENGTH/2);
+
+    memset(innobak->backup_file_name->first_name,0,DFTLENGTH/8);
+    memset(innobak->backup_file_name->hostname,0,DFTLENGTH/4);
+    memset(innobak->backup_file_name->backup_type,0,DFTLENGTH/4);
+    memset(innobak->backup_file_name->online_or_offline,0,DFTLENGTH/4);
+    memset(innobak->backup_file_name->compress_or_no,0,DFTLENGTH/20);
+    memset(innobak->backup_file_name->encrypt_or_no,0,DFTLENGTH/20);
+    memset(innobak->backup_file_name->timestamp,0,DFTLENGTH/20);
+    memset(innobak->backup_file_name->backup_number,0,DFTLENGTH/20);
+
     innobak->parallel = 0;
     innobak->throttle = 0;
     innobak->compress = 0;
