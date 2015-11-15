@@ -111,6 +111,79 @@ int help(void)
     return(0);
 }
 
+/**********************************************************************
+ *Read xtrabackup_checkpoints in xtrabackup directory.
+ *Save metadata informations to metadata struct.
+ *@Return TRUE on success.FALSE on failure.
+ *Author: Tian, Lei [tianlei@paratera.com]
+ *Date: 20151019PM1713
+ *********************************************************************/
+static my_bool
+read_xtrabackup_checkpoint_file(char *extra_lsndir,META *metadata)
+{
+    FILE *fp = NULL;
+    my_bool  r = TRUE;
+    int  t;
+
+
+    static char *chk = NULL;
+    chk = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    memset(chk,0,DFTLENGTH/2);
+
+    
+
+    //read backup_directory_name files.
+    snprintf(chk,DFTLENGTH/2-1,"%s/xtrabackup_checkpoints",extra_lsndir);
+    if(strlen(chk) <= 0){
+        return(FALSE);
+    }
+
+    fp = fopen(chk,"r");
+    if(fp == NULL){
+        perror("fopen()");
+        return(FALSE);
+    }
+
+    if (fscanf(fp, "backup_type = %s\n", metadata->metadata_type)
+                    != 1) {
+            r = FALSE;
+            goto end;
+    }
+    if (fscanf(fp, "from_lsn = %lld\n", &metadata->metadata_from_lsn)
+            != 1) {
+        r = FALSE;
+        goto end;
+    }
+    if (fscanf(fp, "to_lsn = %lld\n", &metadata->metadata_to_lsn)
+            != 1) {
+        r = FALSE;
+        goto end;
+    }
+    if (fscanf(fp, "last_lsn = %lld\n", &metadata->metadata_last_lsn)
+            != 1) {
+        metadata->metadata_last_lsn = 0;
+    }
+    /* Optional field */
+    if (fscanf(fp, "compact = %d\n", &t) == 1) {
+        metadata->xtrabackup_compact = (t == 1);
+    } else {
+        metadata->xtrabackup_compact  = 0;
+    }
+
+    snprintf(metadata->extra_lsndir,DFTLENGTH/2-1,"%s",extra_lsndir);
+
+
+end:
+    fclose(fp);
+    free(chk);
+
+    return(r);
+}
+
+
+
+
+
 
 /***********************************************************************
  *parse database connection params informations,save informations into DBP struct.
@@ -250,6 +323,33 @@ int connection_pdb_server(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,char *query){
 }
 
 
+/***********************************************************************
+ *Write backup meata info into MySQL Database.
+ *@return TRUE on success,FALSE on failure.
+ *Author: Tian, Lei [tianlei@paratera.com]
+ *Date:20151019PM1318
+ ************************************************************************/
+static my_bool
+xtrabackup_write_metadata_into_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *metadata)
+{
+    int cres = 0;
+    //保存查询语句的缓冲区
+    char *query = NULL;
+    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    memset(query,0,DFTLENGTH*2);
+
+    snprintf(query,DFTLENGTH*2-1,"INSERT INTO sysadmin.t_xtra_backup_metadata(metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir) VALUES('%s',%lld,%lld,%lld,%lld,'%s','%s','%s','%s')",metadata->metadata_type,(long long)metadata->metadata_from_lsn,(long long)metadata->metadata_to_lsn,(long long)metadata->metadata_last_lsn,(int)metadata->xtrabackup_compact,metadata->base_backup_directory,metadata->backup_directory_name,metadata->baseon_backup,metadata->extra_lsndir);
+    cres = connection_pdb_server(dbp,res,&row,query);
+    if(cres == 0){
+        return(0);
+    }
+    else{
+        return(1);
+    }
+ 
+}
+
+
 /********************n***************************************************
  * database is exists?
  *@return TRUE on success,FALSE on failure.
@@ -300,7 +400,7 @@ int innobackupex_database_backup(){
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
-int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
+int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
     struct tm *ptr;
     time_t ct;
     char *timestamp_buf = NULL;
@@ -426,11 +526,20 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                 snprintf(innobak->backup_file_name->encrypt_or_no,DFTLENGTH/20,"%d",1);
                                 snprintf(innobak->backup_file_name->timestamp,DFTLENGTH/20,"%s",timestamp_buf);
                                 snprintf(innobak->backup_file_name->backup_number,DFTLENGTH/20,"%s","001");
+
+                                snprintf(meta->base_backup_directory,DFTLENGTH/2-1,"%s",para[6].content);
+
                                 snprintf(ibackup_file_name,DFTLENGTH,"%s.%s.%s%s%s%s.%s.%s",innobak->backup_file_name->first_name,innobak->backup_file_name->hostname,innobak->backup_file_name->backup_type,innobak->backup_file_name->online_or_offline,innobak->backup_file_name->compress_or_no,innobak->backup_file_name->encrypt_or_no,innobak->backup_file_name->timestamp,innobak->backup_file_name->backup_number);
+
+                                snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
 
                                 /*拼接innodbbackupex 命令行*/
                                 snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,istream,iparallel,para[6].content,">",para[6].content,ibackup_file_name);
                                 system(innobackupex);
+
+                                read_xtrabackup_checkpoint_file("/tmp",meta);
+
+                                xtrabackup_write_metadata_into_db(dbp,res,row,meta);
                                 
                             }
                             else{
@@ -610,10 +719,17 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak){
                                     snprintf(innobak->backup_file_name->encrypt_or_no,DFTLENGTH/20,"%d",1);
                                     snprintf(innobak->backup_file_name->timestamp,DFTLENGTH/20,"%s",timestamp_buf);
                                     snprintf(innobak->backup_file_name->backup_number,DFTLENGTH/20,"%s","001");
+                                    snprintf(meta->base_backup_directory,DFTLENGTH/2-1,"%s",para[7].content);
                                     snprintf(ibackup_file_name,DFTLENGTH,"%s.%s.%s%s%s%s.%s.%s",innobak->backup_file_name->first_name,innobak->backup_file_name->hostname,innobak->backup_file_name->backup_type,innobak->backup_file_name->online_or_offline,innobak->backup_file_name->compress_or_no,innobak->backup_file_name->encrypt_or_no,innobak->backup_file_name->timestamp,innobak->backup_file_name->backup_number);
-                                    printf("pdb backup all full online compress to /dbbackup\n");
+
+                                    snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
                                     snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[7].content,">",para[7].content,ibackup_file_name);
                                     system(innobackupex);
+                                    
+                                    read_xtrabackup_checkpoint_file("/tmp",meta);
+
+                                    xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+
                                 }
                                 else{
                                     print_backup_help();
@@ -934,6 +1050,30 @@ int main(int argc,char **argv){
     };
 
     /*
+        初始化metadata数据
+    */
+    META *metadata = NULL;
+    metadata = (META *)malloc(sizeof(META));
+    memset(metadata,0,sizeof(META));
+
+    metadata->metadata_type = (char *)malloc(sizeof(char)*DFTLENGTH/8);
+    memset(metadata->metadata_type,0,DFTLENGTH/8);
+    metadata->base_backup_directory = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    memset(metadata->base_backup_directory,0,DFTLENGTH/2);
+    metadata->backup_directory_name = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    memset(metadata->backup_directory_name,0,DFTLENGTH/2);
+    metadata->baseon_backup = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    memset(metadata->baseon_backup,0,DFTLENGTH/2);
+    metadata->extra_lsndir = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    memset(metadata->extra_lsndir,0,DFTLENGTH/2);
+    metadata->metadata_from_lsn =0;
+    metadata->metadata_to_lsn = 0;
+    metadata->metadata_last_lsn = 0;
+    metadata->xtrabackup_compact = 0;
+
+
+
+    /*
         初始化innobackupex参数 
     */
     INNOBAK *innobak;
@@ -1015,7 +1155,7 @@ int main(int argc,char **argv){
         开始解析命令行参数
    */ 
     if(strstr("backup",para[1].content)){
-        opsres = backup_database(para,dbp,innobak);
+        opsres = backup_database(para,dbp,innobak,metadata);
         exit(opsres);
     }
     else if(strstr("restore",para[1].content)){

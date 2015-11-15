@@ -98,7 +98,7 @@ typedef struct innobak{
 
 int parse_database_conn_params(char *,DBP *);
 int parse_innobackupex_params(char *,INNOBAK *);
-int backup_database(PARA *,DBP *,INNOBAK *);
+int backup_database(PARA *,DBP *,INNOBAK *,META *);
 int restore_database(PARA *);
 int operate_database_history(PARA *);
 int pdb_shell(DBP *);
