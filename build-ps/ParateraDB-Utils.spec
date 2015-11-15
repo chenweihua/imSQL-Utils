@@ -85,6 +85,52 @@ install -D -m 0755 $MBD/support-scripts/pt-visual-explain $RBR/%{_bindir}/pt-vis
 cp -r $MBD/doc/doc $RBR/%{_datadir}/
 cp -r $MBD/doc/man $RBR/%{_datadir}/
 
+%post 
+if [ -d /etc/sysconfig/pdb ];then
+    /bin/cat >innobackupex <<EOF
+innobak_bin = /usr/bin/innobackupex
+parallel = 4
+throttle = 4
+use_memory = 128MB
+encrypt = AES256
+encrypt_key_file = /etc/sysconfig/secure.key
+stream = xbstream
+extra_lsndir = /tmp
+hostname = developer-rhel6node1
+EOF
+
+    /bin/cat >db.properties <<EOF
+host = 127.0.0.1
+user = root
+socket = /var/lib/mysql/mysql.sock
+pass = k7e3h8q4
+port = 3306
+EOF
+
+else
+    /bin/mkdir -p /etc/sysconfig/pdb
+    /bin/cat >innobackupex <<EOF
+innobak_bin = /usr/bin/innobackupex
+parallel = 4
+throttle = 4
+use_memory = 128MB
+encrypt = AES256
+encrypt_key_file = /etc/sysconfig/secure.key
+stream = xbstream
+extra_lsndir = /tmp
+hostname = developer-rhel6node1
+EOF
+
+    /bin/cat >db.properties <<EOF
+host = 127.0.0.1
+user = root
+socket = /var/lib/mysql/mysql.sock
+pass = k7e3h8q4
+port = 3306
+EOF
+
+fi
+echo -n `openssl rand -base64 24` >/etc/sysconfig/secure.key
 
 %files
 %{_bindir}/CompressDbxBak
@@ -165,8 +211,6 @@ cp -r $MBD/doc/man $RBR/%{_datadir}/
 %{_datadir}/percona-toolkit-2.2.15/INSTALL
 %{_datadir}/percona-toolkit-2.2.15/README
 #%doc
-
-
 
 %changelog
 
