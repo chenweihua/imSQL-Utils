@@ -601,19 +601,115 @@ int database_backup_is_exists(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para)
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
-int read_innobackup_content_from_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para){
+int read_innobackup_content_from_db(DBP *dbp,PARA *para){
+    MYSQL_RES *res = NULL;
+    MYSQL_ROW row;
     int cres = 0;
     int fres = 0;
+    int pres = 0;
+    int i = 0;
+    int backup_is_exists = 0;
+    my_ulonglong num_rows = 0;
     char *query = NULL;
+    
+    //获取数据库参数
+    pres = parse_database_conn_params(pdb_conn_info,dbp);
+
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
+    
+    //创建MySQL数据库连接符。
+    MYSQL *conn = NULL;
+    conn = mysql_init(NULL);
+    //连接到目标数据库
+    mysql_real_connect(conn,dbp->host,dbp->user,dbp->pass,NULL,dbp->port,dbp->socket,0);
 
-    snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from sysadmin.t_xtra_backup_metadata WHERE id='",para[2].content,"'");
-                                
-    cres = connection_pdb_server(dbp,res,row,query);
-    if(cres == 0){
-       fres = atoi(*row[0]);
+    int mysql_query_res = 0;
+
+    switch(para->argclen){
+        case 2:
+            print_history_help();
+            break;
+        case 3:
+            print_history_help();
+            break;
+        case 4:
+            backup_is_exists = database_backup_is_exists(dbp,res,&row,para);
+            if(backup_is_exists>0){
+                if(strstr("into",para[3].content)){
+                    if(strlen(para[4].content) != 0 ){
+                        snprintf(query,DFTLENGTH*2,"%s%s","select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from sysadmin.t_xtra_backup_metadata where id =",para[2].content);
+                        mysql_query_res = mysql_query(conn,query);
+                        if(mysql_query_res != 0){
+                            return(1);
+                        }
+                        res = mysql_store_result(conn);
+                        if(res == NULL){
+                            return(2);
+                        }
+
+                        //    cres = connection_pdb_server(dbp,res,&row,query);
+
+                        while((row = mysql_fetch_row(res)) != NULL){
+                            for(i = 0;i<mysql_num_fields(res);i++ ){
+                                switch(i){
+                                    case 0:
+                                        printf("id:  %s\n",row[i]);
+                                        break;
+                                    case 1:
+                                        printf("metadata_type: %s\n",row[i]);
+                                        break;
+                                    case 2:
+                                        printf("metadata_from_lsn: %s\n",row[i]);
+                                        break;
+                                    case 3:
+                                        printf("metadata_to_lsn: %s\n",row[i]);
+                                        break;
+                                    case 4:
+                                        printf("metadata_last_lsn: %s\n",row[i]);
+                                        break;
+                                    case 5:
+                                        printf("xtrabackup_compact: %s\n",row[i]);
+                                        break;
+                                    case 6:
+                                        printf("is_deleted: %s\n",row[i]);
+                                        break;
+                                    case 7:
+                                        printf("created_datetime: %s\n",row[i]);
+                                        break;
+                                    case 8:
+                                        printf("updated_datetime: %s\n",row[i]);
+                                        break;
+                                    case 9:
+                                        printf("base_backup_directory: %s\n",row[i]);
+                                        break;
+                                    case 10:
+                                        printf("backup_directory_name: %s\n",row[i]);
+                                        break;
+                                    case 11:
+                                        printf("baseon_backup:  %s\n",row[i]);
+                                        break;
+                                    case 12:
+                                        printf("extra_lsndir:  %s\n",row[i]);
+                                        break;
+                                    default:
+                                        printf("Err\n");
+                                }
+                            }
+                            printf("\n");
+                        }
+                    }
+                }
+            }
+            break;
+        case 5:
+            break;
+        case 6:
+            break;
+        default:
+            printf("Restore Err\n");
     }
+
     return(0);
 }
 
@@ -1340,7 +1436,7 @@ int restore_database(DBP *dbp,PARA *para,INNOBAK *innobak){
                 if(strstr("into",para[3].content)){
                     if(strlen(para[4].content) != 0){
                         //pdb restore 100 into /Database
-                        printf(":)\n"); 
+                        read_innobackup_content_from_db(dbp,para);
                     }
                     else{
                         printf("Directory Error\n");
