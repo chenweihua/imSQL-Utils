@@ -227,6 +227,8 @@ end:
     return(res);
 }
 
+
+
 /***********************************************************************
  * save innobackupex params informations informations into DBP struct.
  *@return TRUE on success,FALSE on failure.
@@ -569,6 +571,50 @@ int database_is_exists(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para){
        fres = atoi(*row[0]);
     }
     return(fres);
+}
+
+/********************n***************************************************
+ * database backup is exists?
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int database_backup_is_exists(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para){
+    int cres = 0;
+    int fres = 0;
+    char *query = NULL;
+    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    memset(query,0,DFTLENGTH*2);
+
+    snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from sysadmin.t_xtra_backup_metadata WHERE id='",para[2].content,"'");
+                                
+    cres = connection_pdb_server(dbp,res,row,query);
+    if(cres == 0){
+       fres = atoi(*row[0]);
+    }
+    return(fres);
+}
+
+/********************n***************************************************
+ * database backup is exists?
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int read_innobackup_content_from_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para){
+    int cres = 0;
+    int fres = 0;
+    char *query = NULL;
+    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    memset(query,0,DFTLENGTH*2);
+
+    snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from sysadmin.t_xtra_backup_metadata WHERE id='",para[2].content,"'");
+                                
+    cres = connection_pdb_server(dbp,res,row,query);
+    if(cres == 0){
+       fres = atoi(*row[0]);
+    }
+    return(0);
 }
 
 
@@ -1270,7 +1316,53 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
-int restore_database(PARA *para){
+int restore_database(DBP *dbp,PARA *para,INNOBAK *innobak){
+
+    MYSQL_RES *res = NULL;
+    MYSQL_ROW row;
+    int backup_is_exists = 0;
+    int pres = 0;
+
+    //获取数据库参数
+    pres = parse_database_conn_params(pdb_conn_info,dbp);
+
+
+    switch(para->argclen){
+        case 2:
+            print_restore_help();
+            break;
+        case 3:
+            print_restore_help();
+            break;
+        case 4:
+            backup_is_exists = database_backup_is_exists(dbp,res,&row,para);
+            if(backup_is_exists>0){
+                if(strstr("into",para[3].content)){
+                    if(strlen(para[4].content) != 0){
+                        //pdb restore 100 into /Database
+                        printf(":)\n"); 
+                    }
+                    else{
+                        printf("Directory Error\n");
+                        print_restore_help();
+                    }
+                }
+                else{
+                    print_restore_help();
+                }
+            }
+            else{
+                printf("No backup id %d\n",para[2].content);
+                print_restore_help();
+            }
+            break;
+        case 5:
+            break;
+        case 6:
+            break;
+        default:
+            printf("Err Restore\n");
+    }
 }
 
 /***********************************************************************
@@ -1800,7 +1892,7 @@ int main(int argc,char **argv){
         exit(opsres);
     }
     else if(strstr("restore",para[1].content)){
-        print_restore_help();
+        restore_database(dbp,para,innobak);
     }
     else if(strstr("list",para[1].content)){
          list_backup_history(dbp,para);
