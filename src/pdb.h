@@ -27,6 +27,7 @@ char *inno_conn_info = "/etc/sysconfig/pdb/innobackupex";
 */
 typedef struct metadata{
     char *    metadata_type;
+    int       is_compressed;
     long long metadata_from_lsn;
     long long metadata_to_lsn;
     long long metadata_last_lsn;

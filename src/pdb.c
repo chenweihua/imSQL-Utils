@@ -364,7 +364,7 @@ xtrabackup_write_metadata_into_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *me
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
 
-    snprintf(query,DFTLENGTH*2-1,"INSERT INTO sysadmin.t_xtra_backup_metadata(metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir) VALUES('%s',%lld,%lld,%lld,%lld,'%s','%s','%s','%s')",metadata->metadata_type,(long long)metadata->metadata_from_lsn,(long long)metadata->metadata_to_lsn,(long long)metadata->metadata_last_lsn,(int)metadata->xtrabackup_compact,metadata->base_backup_directory,metadata->backup_directory_name,metadata->baseon_backup,metadata->extra_lsndir);
+    snprintf(query,DFTLENGTH*2-1,"INSERT INTO sysadmin.t_xtra_backup_metadata(metadata_type,is_compressed,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir) VALUES('%s',%d,%lld,%lld,%lld,%lld,'%s','%s','%s','%s')",metadata->metadata_type,metadata->is_compressed,(long long)metadata->metadata_from_lsn,(long long)metadata->metadata_to_lsn,(long long)metadata->metadata_last_lsn,(int)metadata->xtrabackup_compact,metadata->base_backup_directory,metadata->backup_directory_name,metadata->baseon_backup,metadata->extra_lsndir);
 
     cres = connection_pdb_server(dbp,res,&row,query);
     if(cres == 0){
@@ -1226,6 +1226,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                     snprintf(innobackupex,DFTLENGTH*2,"%s %s %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,iextra_lsndir,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[7].content,">",para[7].content,ibackup_file_name);
                                     system(innobackupex);
 
+                                    meta->is_compressed = 1;
+
                                     read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
 
                                     xtrabackup_write_metadata_into_db(dbp,res,row,meta);
@@ -1276,6 +1278,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                     snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
 
+
                                     read_full_backup_name_from_db(dbp,res,row,ibaseon_backup);
                                     xtrabackup_read_metadata_from_db(dbp,res,row,meta);
 
@@ -1289,6 +1292,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                     snprintf(meta->baseon_backup,DFTLENGTH/8,"%s",ibaseon_backup);
                                     snprintf(meta->backup_directory_name,DFTLENGTH*2,"%s",ibackup_file_name);
+                                    
+                                    meta->is_compressed = 1;
 
                                     xtrabackup_write_metadata_into_db(dbp,res,row,meta);
 
@@ -1360,6 +1365,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                             snprintf(innobackupex,DFTLENGTH*2,"%s %s %s'mysql sysadmin %s' %s %s %s %s %s %s %s %s %s %s/%s",innobak->innobak_bin,iconn,"--databases=",para[3].content,iextra_lsndir,iencrypt,iencrypt_key_file,"--compress",icompress_threads,istream,iparallel,para[8].content,">",para[8].content,ibackup_file_name);
                                             system(innobackupex);
 
+                                            meta->is_compressed = 1;
+
                                             read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
 
                                             xtrabackup_write_metadata_into_db(dbp,res,row,meta);
@@ -1430,6 +1437,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                             snprintf(meta->baseon_backup,DFTLENGTH/8,"%s",ibaseon_backup);
                                             snprintf(meta->backup_directory_name,DFTLENGTH*2,"%s",ibackup_file_name);
+
+                                            meta->is_compressed = 1;
 
                                             xtrabackup_write_metadata_into_db(dbp,res,row,meta);
 
@@ -2155,6 +2164,7 @@ int main(int argc,char **argv){
     metadata->metadata_to_lsn = 0;
     metadata->metadata_last_lsn = 0;
     metadata->xtrabackup_compact = 0;
+    metadata->is_compressed = 0;
 
     /*
         初始化innobackupex参数 
