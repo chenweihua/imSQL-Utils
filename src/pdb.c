@@ -709,6 +709,81 @@ int read_innobackup_content_from_db(DBP *dbp,PARA *para,META *metadata){
         case 5:
             break;
         case 6:
+            backup_is_exists = database_backup_is_exists(dbp,res,&row,para);
+            if(backup_is_exists>0){
+                if(strstr("from",para[3].content)){
+                    if(strlen(para[4].content) != 0 ){
+                        if(strstr("into",para[5].content)){
+                            if(strlen(para[6].content) != 0){
+                                snprintf(query,DFTLENGTH*2,"%s%s","select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from sysadmin.t_xtra_backup_metadata where id =",para[2].content);
+                                mysql_query_res = mysql_query(conn,query);
+                                if(mysql_query_res != 0){
+                                    return(1);
+                                }
+                                res = mysql_store_result(conn);
+                                if(res == NULL){
+                                    return(2);
+                                }
+
+                                //    cres = connection_pdb_server(dbp,res,&row,query);
+
+                                while((row = mysql_fetch_row(res)) != NULL){
+                                    for(i = 0;i<mysql_num_fields(res);i++ ){
+                                        switch(i){
+                                            case 0:
+                                                printf("id:  %s\n",row[i]);
+                                                break;
+                                            case 1:
+                                                snprintf(metadata->metadata_type,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
+                                                printf("metadata_type: %s\n",row[i]);
+                                                break;
+                                            case 2:
+                                                printf("metadata_from_lsn: %s\n",row[i]);
+                                                break;
+                                            case 3:
+                                                printf("metadata_to_lsn: %s\n",row[i]);
+                                                break;
+                                            case 4:
+                                                printf("metadata_last_lsn: %s\n",row[i]);
+                                                break;
+                                            case 5:
+                                                printf("xtrabackup_compact: %s\n",row[i]);
+                                                break;
+                                            case 6:
+                                                printf("is_deleted: %s\n",row[i]);
+                                                break;
+                                            case 7:
+                                                printf("created_datetime: %s\n",row[i]);
+                                                break;
+                                            case 8:
+                                                printf("updated_datetime: %s\n",row[i]);
+                                                break;
+                                            case 9:
+                                                snprintf(metadata->base_backup_directory,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
+                                                printf("base_backup_directory: %s\n",row[i]);
+                                                break;
+                                            case 10:
+                                                snprintf(metadata->backup_directory_name,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
+                                                printf("backup_directory_name: %s\n",row[i]);
+                                                break;
+                                            case 11:
+                                                snprintf(metadata->baseon_backup,DFTLENGTH/8-1,"%s",row[i] != NULL?row[i]:"");
+                                                printf("baseon_backup:  %s\n",row[i]);
+                                                break;
+                                            case 12:
+                                                printf("extra_lsndir:  %s\n",row[i]);
+                                                break;
+                                            default:
+                                                printf("Err\n");
+                                        }
+                                    }
+                                    printf("\n");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             break;
         default:
             printf("Restore Err\n");
@@ -1539,8 +1614,105 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
             }
             break;
         case 5:
+            print_restore_help();
             break;
         case 6:
+            backup_is_exists = database_backup_is_exists(dbp,res,&row,para);
+            if(backup_is_exists>0){
+                if(strstr("from",para[3].content)){
+                    if(strlen(para[4].content) != 0){
+                        if(strstr("into",para[5].content)){
+                            if(strlen(para[6].content) != 0){
+                                //pdb restore 100 from /root/backup into /Database
+                                read_innobackup_content_from_db(dbp,para,metadata);
+                                if(strstr(metadata->metadata_type,"full-backuped")){
+                                    printf("full-backuped\n");
+                                    snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",para[4].content,metadata->backup_directory_name,"/usr/bin/xbstream","-x","-C",para[6].content);
+                                    restore_ops_res = system(restore_ops);
+                                    if(restore_ops_res == 0){
+                                        snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log --redo-only",para[6].content);
+                                        applog_ops_res = system(restore_applog);
+                                        if(applog_ops_res == 0){
+                                            printf("Apply Logs Success\n");
+                                        }
+                                        else{
+                                            printf("Apply Logs Failure\n");
+                                        }
+                                    }
+                                    else{
+                                        printf("Restore Failure\n");
+                                    }
+                                }
+                                else if(strstr(metadata->metadata_type,"incremental")){
+                                    printf("incremental\n");
+                                    //restore full backup .
+                                    snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",para[4].content,metadata->baseon_backup,"/usr/bin/xbstream","-x","-C",para[6].content);
+                                    printf("restore full backup %s/%s\n",para[4].content,metadata->baseon_backup);
+                                    restore_ops_res = system(restore_ops);
+                                    if(restore_ops_res == 0){
+                                        snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log --redo-only",para[6].content);
+                                        applog_ops_res = system(restore_applog);
+                                        if(applog_ops_res == 0){
+                                            printf("Apply Full Backup Logs Success\n");
+                                            //restore incremental backup.
+                                            memset(restore_ops,0,DFTLENGTH*2);
+                                            snprintf(incremental_restore_path,DFTLENGTH*2-1,"%s/%s",para[6].content,"incr");
+                                            mkdir(incremental_restore_path,0777);
+                                            snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",para[4].content,metadata->backup_directory_name,"/usr/bin/xbstream","-x","-C",incremental_restore_path);
+                                            printf("restore incremental backup %s/%s\n",para[4].content,metadata->backup_directory_name);
+                                            restore_ops_res = system(restore_ops);
+                                            if(restore_ops_res == 0){
+                                                snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s %s%s","/usr/bin/innobackupex","--apply-log --redo-only",para[6].content,"--incremental-dir=",incremental_restore_path);
+                                                applog_ops_res = system(restore_applog);
+                                                if(applog_ops_res == 0){
+                                                    printf("Apply Incremental Backup Logs Success\n");
+                                                    snprintf(remove_incremental_path_ops,DFTLENGTH*2-1,"%s %s","rm -fr",incremental_restore_path);
+                                                    system(remove_incremental_path_ops);
+                                                }
+                                                else{
+                                                    printf("Apply Incremental Backup Logs Failure\n");
+                                                }
+                                            }
+                                            else{
+                                                printf("Restore Failure\n");
+                                            }
+
+                                        }
+                                        else{
+                                            printf("Apply Logs Failure\n");
+                                        }
+                                    }
+                                    else{
+                                        printf("Restore Failure\n");
+                                    }
+                                }
+                                else{
+                                    printf("metadata_type != full-backuped or incremental\n");
+                                    return(41);
+                                }
+                            }
+                            else{
+                                printf("Directory Error\n");
+                                print_restore_help();
+                            }
+                        }
+                        else{
+                            print_restore_help();
+                        }
+                    }
+                    else{
+                        printf("Directory Error\n");
+                        print_restore_help();
+                    }
+                }
+                else{
+                    print_restore_help();
+                }
+            }
+            else{
+                printf("No backup id %d\n",para[2].content);
+                print_restore_help();
+            }
             break;
         default:
             printf("Err Restore\n");
