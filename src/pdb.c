@@ -1499,7 +1499,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
  *@return TRUE on success,FALSE on failure.
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
-*/
+ */
 int restore_database(DBP *dbp,PARA *para,META *metadata){
 
     MYSQL_RES *res = NULL;
@@ -1514,10 +1514,13 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
 
     char *incremental_restore_path = NULL;
     char *remove_incremental_path_ops = NULL;
+    char *decompress_ops = NULL;
     incremental_restore_path = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     remove_incremental_path_ops = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    decompress_ops = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     memset(incremental_restore_path,0,DFTLENGTH*2);
     memset(remove_incremental_path_ops,0,DFTLENGTH*2);
+    memset(decompress_ops,0,DFTLENGTH*2);
 
     restore_ops = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     restore_applog = (char *)malloc(sizeof(char)*DFTLENGTH*2);
@@ -1547,6 +1550,11 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
                             snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",metadata->base_backup_directory,metadata->backup_directory_name,"/usr/bin/xbstream","-x","-C",para[4].content);
                             restore_ops_res = system(restore_ops);
                             if(restore_ops_res == 0){
+                                if(metadata->is_compressed = 1){
+                                    printf("Decompress Tablespaces\n");
+                                    snprintf(decompress_ops,DFTLENGTH*2-1,"%s %s","/usr/bin/innobackupex --decompress",para[4].content);
+                                    system(decompress_ops);
+                                }
                                 snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log --redo-only",para[4].content);
                                 applog_ops_res = system(restore_applog);
                                 if(applog_ops_res == 0){
@@ -1567,6 +1575,12 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
                             printf("restore full backup %s/%s\n",metadata->base_backup_directory,metadata->baseon_backup);
                             restore_ops_res = system(restore_ops);
                             if(restore_ops_res == 0){
+                                //Decompress Tablespaces.
+                                if(metadata->is_compressed = 1){
+                                    printf("Decompress Tablespaces\n");
+                                    snprintf(decompress_ops,DFTLENGTH*2-1,"%s %s","/usr/bin/innobackupex --decompress",para[4].content);
+                                    system(decompress_ops);
+                                }
                                 snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log --redo-only",para[4].content);
                                 applog_ops_res = system(restore_applog);
                                 if(applog_ops_res == 0){
@@ -1579,6 +1593,12 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
                                     printf("restore incremental backup %s/%s\n",metadata->base_backup_directory,metadata->backup_directory_name);
                                     restore_ops_res = system(restore_ops);
                                     if(restore_ops_res == 0){
+                                        //Decompress Tablespaces.
+                                        if(metadata->is_compressed = 1){
+                                            printf("Decompress Tablespaces\n");
+                                            snprintf(decompress_ops,DFTLENGTH*2-1,"%s %s","/usr/bin/innobackupex --decompress",incremental_restore_path);
+                                            system(decompress_ops);
+                                        }
                                         snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s %s%s","/usr/bin/innobackupex","--apply-log --redo-only",para[4].content,"--incremental-dir=",incremental_restore_path);
                                         applog_ops_res = system(restore_applog);
                                         if(applog_ops_res == 0){
@@ -1639,6 +1659,12 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
                                     snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",para[4].content,metadata->backup_directory_name,"/usr/bin/xbstream","-x","-C",para[6].content);
                                     restore_ops_res = system(restore_ops);
                                     if(restore_ops_res == 0){
+                                        //Decompress Tablespaces.
+                                        if(metadata->is_compressed = 1){
+                                            printf("Decompress Tablespaces\n");
+                                            snprintf(decompress_ops,DFTLENGTH*2-1,"%s %s","/usr/bin/innobackupex --decompress",para[6].content);
+                                            system(decompress_ops);
+                                        }
                                         snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log --redo-only",para[6].content);
                                         applog_ops_res = system(restore_applog);
                                         if(applog_ops_res == 0){
@@ -1659,6 +1685,13 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
                                     printf("restore full backup %s/%s\n",para[4].content,metadata->baseon_backup);
                                     restore_ops_res = system(restore_ops);
                                     if(restore_ops_res == 0){
+
+                                        //Decompress Tablespaces.
+                                        if(metadata->is_compressed = 1){
+                                            printf("Decompress Tablespaces\n");
+                                            snprintf(decompress_ops,DFTLENGTH*2-1,"%s %s","/usr/bin/innobackupex --decompress",para[6].content);
+                                            system(decompress_ops);
+                                        }
                                         snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log --redo-only",para[6].content);
                                         applog_ops_res = system(restore_applog);
                                         if(applog_ops_res == 0){
@@ -1671,6 +1704,12 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
                                             printf("restore incremental backup %s/%s\n",para[4].content,metadata->backup_directory_name);
                                             restore_ops_res = system(restore_ops);
                                             if(restore_ops_res == 0){
+                                                //Decompress Tablespaces.
+                                                if(metadata->is_compressed = 1){
+                                                    printf("Decompress Tablespaces\n");
+                                                    snprintf(decompress_ops,DFTLENGTH*2-1,"%s %s","/usr/bin/innobackupex --decompress",incremental_restore_path);
+                                                    system(decompress_ops);
+                                                }
                                                 snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s %s%s","/usr/bin/innobackupex","--apply-log --redo-only",para[6].content,"--incremental-dir=",incremental_restore_path);
                                                 applog_ops_res = system(restore_applog);
                                                 if(applog_ops_res == 0){
