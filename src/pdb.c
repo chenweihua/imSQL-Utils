@@ -690,6 +690,7 @@ int read_innobackup_content_from_db(DBP *dbp,PARA *para,META *metadata){
                                         printf("backup_directory_name: %s\n",row[i]);
                                         break;
                                     case 11:
+                                        snprintf(metadata->baseon_backup,DFTLENGTH/8-1,"%s",row[i] != NULL?row[i]:"");
                                         printf("baseon_backup:  %s\n",row[i]);
                                         break;
                                     case 12:
@@ -1427,6 +1428,13 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
     int restore_ops_res = 0;
     int applog_ops_res = 0;
 
+    char *incremental_restore_path = NULL;
+    char *remove_incremental_path_ops = NULL;
+    incremental_restore_path = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    remove_incremental_path_ops = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    memset(incremental_restore_path,0,DFTLENGTH*2);
+    memset(remove_incremental_path_ops,0,DFTLENGTH*2);
+
     restore_ops = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     restore_applog = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     memset(restore_ops,0,DFTLENGTH*2);
@@ -1455,7 +1463,7 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
                             snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",metadata->base_backup_directory,metadata->backup_directory_name,"/usr/bin/xbstream","-x","-C",para[4].content);
                             restore_ops_res = system(restore_ops);
                             if(restore_ops_res == 0){
-                                snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log",para[4].content);
+                                snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log --redo-only",para[4].content);
                                 applog_ops_res = system(restore_applog);
                                 if(applog_ops_res == 0){
                                     printf("Apply Logs Success\n");
@@ -1470,6 +1478,46 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
                         }
                         else if(strstr(metadata->metadata_type,"incremental")){
                             printf("incremental\n");
+                            //restore full backup .
+                            snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",metadata->base_backup_directory,metadata->baseon_backup,"/usr/bin/xbstream","-x","-C",para[4].content);
+                            printf("restore full backup %s/%s\n",metadata->base_backup_directory,metadata->baseon_backup);
+                            restore_ops_res = system(restore_ops);
+                            if(restore_ops_res == 0){
+                                snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log --redo-only",para[4].content);
+                                applog_ops_res = system(restore_applog);
+                                if(applog_ops_res == 0){
+                                    printf("Apply Full Backup Logs Success\n");
+                                    //restore incremental backup.
+                                    memset(restore_ops,0,DFTLENGTH*2);
+                                    snprintf(incremental_restore_path,DFTLENGTH*2-1,"%s/%s",para[4].content,"incr");
+                                    mkdir(incremental_restore_path,0777);
+                                    snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",metadata->base_backup_directory,metadata->backup_directory_name,"/usr/bin/xbstream","-x","-C",incremental_restore_path);
+                                    printf("restore incremental backup %s/%s\n",metadata->base_backup_directory,metadata->backup_directory_name);
+                                    restore_ops_res = system(restore_ops);
+                                    if(restore_ops_res == 0){
+                                        snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s %s%s","/usr/bin/innobackupex","--apply-log --redo-only",para[4].content,"--incremental-dir=",incremental_restore_path);
+                                        applog_ops_res = system(restore_applog);
+                                        if(applog_ops_res == 0){
+                                            printf("Apply Incremental Backup Logs Success\n");
+                                            snprintf(remove_incremental_path_ops,DFTLENGTH*2-1,"%s %s","rm -fr",incremental_restore_path);
+                                            system(remove_incremental_path_ops);
+                                        }
+                                        else{
+                                            printf("Apply Incremental Backup Logs Failure\n");
+                                        }
+                                    }
+                                    else{
+                                        printf("Restore Failure\n");
+                                    }
+
+                                }
+                                else{
+                                    printf("Apply Logs Failure\n");
+                                }
+                            }
+                            else{
+                                printf("Restore Failure\n");
+                            }
                         }
                         else{
                             printf("metadata_type != full-backuped or incremental\n");
