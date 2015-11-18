@@ -601,7 +601,7 @@ int database_backup_is_exists(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para)
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
-int read_innobackup_content_from_db(DBP *dbp,PARA *para){
+int read_innobackup_content_from_db(DBP *dbp,PARA *para,META *metadata){
     MYSQL_RES *res = NULL;
     MYSQL_ROW row;
     int cres = 0;
@@ -657,6 +657,7 @@ int read_innobackup_content_from_db(DBP *dbp,PARA *para){
                                         printf("id:  %s\n",row[i]);
                                         break;
                                     case 1:
+                                        snprintf(metadata->metadata_type,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
                                         printf("metadata_type: %s\n",row[i]);
                                         break;
                                     case 2:
@@ -681,9 +682,11 @@ int read_innobackup_content_from_db(DBP *dbp,PARA *para){
                                         printf("updated_datetime: %s\n",row[i]);
                                         break;
                                     case 9:
+                                        snprintf(metadata->base_backup_directory,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
                                         printf("base_backup_directory: %s\n",row[i]);
                                         break;
                                     case 10:
+                                        snprintf(metadata->backup_directory_name,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
                                         printf("backup_directory_name: %s\n",row[i]);
                                         break;
                                     case 11:
@@ -1412,12 +1415,22 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
-int restore_database(DBP *dbp,PARA *para,INNOBAK *innobak){
+int restore_database(DBP *dbp,PARA *para,META *metadata){
 
     MYSQL_RES *res = NULL;
     MYSQL_ROW row;
     int backup_is_exists = 0;
     int pres = 0;
+
+    char *restore_ops = NULL;
+    char *restore_applog = NULL;
+    int restore_ops_res = 0;
+    int applog_ops_res = 0;
+
+    restore_ops = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    restore_applog = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    memset(restore_ops,0,DFTLENGTH*2);
+    memset(restore_applog,0,DFTLENGTH*2);
 
     //获取数据库参数
     pres = parse_database_conn_params(pdb_conn_info,dbp);
@@ -1436,7 +1449,32 @@ int restore_database(DBP *dbp,PARA *para,INNOBAK *innobak){
                 if(strstr("into",para[3].content)){
                     if(strlen(para[4].content) != 0){
                         //pdb restore 100 into /Database
-                        read_innobackup_content_from_db(dbp,para);
+                        read_innobackup_content_from_db(dbp,para,metadata);
+                        if(strstr(metadata->metadata_type,"full-backuped")){
+                            printf("full-backuped\n");
+                            snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",metadata->base_backup_directory,metadata->backup_directory_name,"/usr/bin/xbstream","-x","-C",para[4].content);
+                            restore_ops_res = system(restore_ops);
+                            if(restore_ops_res == 0){
+                                snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log",para[4].content);
+                                applog_ops_res = system(restore_applog);
+                                if(applog_ops_res == 0){
+                                    printf("Apply Logs Success\n");
+                                }
+                                else{
+                                    printf("Apply Logs Failure\n");
+                                }
+                            }
+                            else{
+                                printf("Restore Failure\n");
+                            }
+                        }
+                        else if(strstr(metadata->metadata_type,"incremental")){
+                            printf("incremental\n");
+                        }
+                        else{
+                            printf("metadata_type != full-backuped or incremental\n");
+                            return(41);
+                        }
                     }
                     else{
                         printf("Directory Error\n");
@@ -1988,7 +2026,7 @@ int main(int argc,char **argv){
         exit(opsres);
     }
     else if(strstr("restore",para[1].content)){
-        restore_database(dbp,para,innobak);
+        restore_database(dbp,para,metadata);
     }
     else if(strstr("list",para[1].content)){
          list_backup_history(dbp,para);

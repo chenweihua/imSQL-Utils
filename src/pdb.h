@@ -100,7 +100,7 @@ typedef struct innobak{
 int parse_database_conn_params(char *,DBP *);
 int parse_innobackupex_params(char *,INNOBAK *);
 int backup_database(PARA *,DBP *,INNOBAK *,META *);
-int restore_database(DBP *,PARA *,INNOBAK *);
+int restore_database(DBP *,PARA *,META *);
 int operate_database_history(PARA *);
 int pdb_shell(DBP *);
 int connection_pdb_server(DBP *,MYSQL_RES *,MYSQL_ROW *,char *);
