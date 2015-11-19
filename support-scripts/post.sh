@@ -48,4 +48,3 @@ EOF
 fi
 echo -n `openssl rand -base64 24` >$BASEPATH/secure.key
 
-

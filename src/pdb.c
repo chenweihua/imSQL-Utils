@@ -9,11 +9,11 @@
 void print_main_help(void)
 {
     char *help_msgs = "Usage: \n \
-\tpdb {backup|restore|history|shell|help} \n \
+\tpdb {backup|restore|list|shell|help} \n \
 \nSample: \n \
 \tpdb backup {all|db} {NULL|dbname} {full|incremental} {offline|online} [compress] {to 'path'} \n \
 \tpdb restore {backup_id} [from 'path'] [into 'path'] \n \
-\tpdb history list [backup|restore|archive_logs|event_schedule] [begin 'timestamp'] [end 'tiemstamp'] [detail] \n \
+\tpdb list history [backup|restore|archive_logs|event_schedule] [begin 'timestamp'] [end 'tiemstamp'] [detail] \n \
 \tpdb shell \n \
 ";
     printf("%s",help_msgs);
@@ -57,9 +57,9 @@ void print_restore_help(void)
 \tpdb restore {backup_id} [from 'path'] [into 'path'] \n \
 \nSample:\n \
 \t1.get backup list \n \
-\t\t#pdb history list backup \n \
+\t\t#pdb list history backup \n \
 \t\tOR \n \
-\t\t#pdb history list backup begin '2015-01-01 00:00:00' end '2015-01-07 23:59:59' \n \
+\t\t#pdb list history backup begin '2015-01-01 00:00:00' end '2015-01-07 23:59:59' \n \
 \t\tYou Can get the backup id number. \n \
 \t2.restore database by backup id. \n \
 \t\t#pdb restore 1 from '/dbbackup' into '/Database' \n \
@@ -79,8 +79,11 @@ void print_restore_help(void)
 void print_history_help(void)
 {
     char *help_msgs = "Usage: \
-\tpdb history list [backup|restore|archive_logs|event_schedule] [begin 'timestamp'] [end 'tiemstamp'] [detail] \n \
+\tpdb list history [backup|restore|archive_logs|event_schedule] [begin 'timestamp'] [end 'tiemstamp'] [detail] \n \
 \nSample: \n \
+\t\t#pdb list history backup \n \
+\t\tOR \n \
+\t\t#pdb list history backup begin '2014-01-01 00:00:00' end '2015-12-31 23:59:59' \n \
 ";
     printf("%s",help_msgs);
 }
@@ -179,10 +182,6 @@ end:
 
     return(r);
 }
-
-
-
-
 
 
 /***********************************************************************
@@ -322,6 +321,31 @@ int connection_pdb_server(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,char *query){
     return(0);
 }
 
+/***********************************************************************
+ * connection pdb server.
+ *@return TRUE on success,FALSE on failure.
+ * Author: Tian, Lei [tianlei@paratera.com]
+ * Date:20151019PM1318
+*/
+int connection_pdb_server_2(DBP *dbp,MYSQL_RES *res,char *query){
+    //创建MySQL数据库连接符。
+    MYSQL *conn = NULL;
+    conn = mysql_init(NULL);
+    //连接到目标数据库
+    mysql_real_connect(conn,dbp->host,dbp->user,dbp->pass,NULL,dbp->port,dbp->socket,0);
+
+    int mysql_query_res = 0;
+    mysql_query_res = mysql_query(conn,query);
+    if(mysql_query_res != 0){
+        return(1);
+    }
+
+    res = mysql_store_result(conn);
+    if(res == NULL){
+        return(2);
+    }
+    return(0);
+}
 
 /***********************************************************************
  *Write backup meata info into MySQL Database.
@@ -558,16 +582,6 @@ int get_database_list(void){
     return(0);
 }
 
-
-/********************n***************************************************
- * innobackupex database backup.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
-*/
-int innobackupex_database_backup(){
-    return(0);
-}
 
 /********************n***************************************************
  * backup database operation.
@@ -1266,6 +1280,7 @@ int restore_database(PARA *para){
  * Date:20151019PM1318
 */
 int operate_database_history(PARA *para){
+    return(0);
 }
 
 
@@ -1274,8 +1289,308 @@ int operate_database_history(PARA *para){
  *@return TRUE on success,FALSE on failure.
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
-*/
-int list_backup_history(){
+ */
+int list_backup_history(DBP *dbp,PARA *para){
+    MYSQL_RES *res = NULL;
+    MYSQL_ROW row;
+    int cres = 0;
+    int fres = 0;
+    int pres = 0;
+    int i = 0;
+    my_ulonglong num_rows = 0;
+    char *query = NULL;
+    
+    //获取数据库参数
+    pres = parse_database_conn_params(pdb_conn_info,dbp);
+
+    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
+    memset(query,0,DFTLENGTH*2);
+    
+    //创建MySQL数据库连接符。
+    MYSQL *conn = NULL;
+    conn = mysql_init(NULL);
+    //连接到目标数据库
+    mysql_real_connect(conn,dbp->host,dbp->user,dbp->pass,NULL,dbp->port,dbp->socket,0);
+
+    int mysql_query_res = 0;
+
+    switch(para->argclen){
+        case 1:
+            print_history_help();
+            break;
+        case 2:
+            print_history_help();
+            break;
+        case 3:
+            if(strstr("list",para[1].content)){
+                if(strstr("history",para[2].content)){
+                    if(strstr("backup",para[3].content)){
+                        snprintf(query,DFTLENGTH*2,"select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from sysadmin.t_xtra_backup_metadata");
+                        mysql_query_res = mysql_query(conn,query);
+                        if(mysql_query_res != 0){
+                            return(1);
+                        }
+                        res = mysql_store_result(conn);
+                        if(res == NULL){
+                            return(2);
+                        }
+
+                        //    cres = connection_pdb_server(dbp,res,&row,query);
+
+                        while((row = mysql_fetch_row(res)) != NULL){
+                            for(i = 0;i<mysql_num_fields(res);i++ ){
+                                switch(i){
+                                    case 0:
+                                        printf("id:  %s\n",row[i]);
+                                        break;
+                                    case 1:
+                                        printf("metadata_type: %s\n",row[i]);
+                                        break;
+                                    case 2:
+                                        printf("metadata_from_lsn: %s\n",row[i]);
+                                        break;
+                                    case 3:
+                                        printf("metadata_to_lsn: %s\n",row[i]);
+                                        break;
+                                    case 4:
+                                        printf("metadata_last_lsn: %s\n",row[i]);
+                                        break;
+                                    case 5:
+                                        printf("xtrabackup_compact: %s\n",row[i]);
+                                        break;
+                                    case 6:
+                                        printf("is_deleted: %s\n",row[i]);
+                                        break;
+                                    case 7:
+                                        printf("created_datetime: %s\n",row[i]);
+                                        break;
+                                    case 8:
+                                        printf("updated_datetime: %s\n",row[i]);
+                                        break;
+                                    case 9:
+                                        printf("base_backup_directory: %s\n",row[i]);
+                                        break;
+                                    case 10:
+                                        printf("backup_directory_name: %s\n",row[i]);
+                                        break;
+                                    case 11:
+                                        printf("baseon_backup:  %s\n",row[i]);
+                                        break;
+                                    case 12:
+                                        printf("extra_lsndir:  %s\n",row[i]);
+                                        break;
+                                    default:
+                                        printf("Err\n");
+                                }
+                            }
+                            printf("\n");
+                        }
+                    }
+                    else{
+                        print_history_help();
+                    }
+                }
+                else{
+                    print_history_help();
+                }
+            }
+            else{
+                print_history_help();
+            }
+
+            break;
+        case 4:
+            print_history_help();
+            break;
+        case 5:
+            if(strstr("list",para[1].content)){
+                if(strstr("history",para[2].content)){
+                    if(strstr("backup",para[3].content)){
+                        if(strstr("begin",para[4].content)){
+                            if(strlen(para[5].content) !=0){
+                                snprintf(query,DFTLENGTH*2,"select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from sysadmin.t_xtra_backup_metadata where created_datetime > '%s'",para[5].content);
+                                mysql_query_res = mysql_query(conn,query);
+                                if(mysql_query_res != 0){
+                                    return(1);
+                                }
+                                res = mysql_store_result(conn);
+                                if(res == NULL){
+                                    return(2);
+                                }
+
+                                //    cres = connection_pdb_server(dbp,res,&row,query);
+
+                                while((row = mysql_fetch_row(res)) != NULL){
+                                    for(i = 0;i<mysql_num_fields(res);i++ ){
+                                        switch(i){
+                                            case 0:
+                                                printf("id:  %s\n",row[i]);
+                                                break;
+                                            case 1:
+                                                printf("metadata_type: %s\n",row[i]);
+                                                break;
+                                            case 2:
+                                                printf("metadata_from_lsn: %s\n",row[i]);
+                                                break;
+                                            case 3:
+                                                printf("metadata_to_lsn: %s\n",row[i]);
+                                                break;
+                                            case 4:
+                                                printf("metadata_last_lsn: %s\n",row[i]);
+                                                break;
+                                            case 5:
+                                                printf("xtrabackup_compact: %s\n",row[i]);
+                                                break;
+                                            case 6:
+                                                printf("is_deleted: %s\n",row[i]);
+                                                break;
+                                            case 7:
+                                                printf("created_datetime: %s\n",row[i]);
+                                                break;
+                                            case 8:
+                                                printf("updated_datetime: %s\n",row[i]);
+                                                break;
+                                            case 9:
+                                                printf("base_backup_directory: %s\n",row[i]);
+                                                break;
+                                            case 10:
+                                                printf("backup_directory_name: %s\n",row[i]);
+                                                break;
+                                            case 11:
+                                                printf("baseon_backup:  %s\n",row[i]);
+                                                break;
+                                            case 12:
+                                                printf("extra_lsndir:  %s\n",row[i]);
+                                                break;
+                                            default:
+                                                printf("Err\n");
+                                        }
+                                    }
+                                    printf("\n");
+                                }
+                            }
+                            else{
+                                print_history_help();
+                            }
+                        }
+                        else{
+                            print_history_help();
+                        }
+                    }
+                    else{
+                        print_history_help();
+                    }
+                }
+                else{
+                    print_history_help();
+                }
+            }
+            else{
+                print_history_help();
+            }
+
+            break;
+        case 6:
+            print_history_help();
+            break;
+        case 7:
+            if(strstr("list",para[1].content)){
+                if(strstr("history",para[2].content)){
+                    if(strstr("backup",para[3].content)){
+                        if(strstr("begin",para[4].content)){
+                            if(strlen(para[5].content) !=0){
+                                if(strstr("end",para[6].content)){
+                                    if(strlen(para[7].content) != 0){
+                                        snprintf(query,DFTLENGTH*2,"select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from sysadmin.t_xtra_backup_metadata where created_datetime > '%s'",para[5].content);
+                                        mysql_query_res = mysql_query(conn,query);
+                                        if(mysql_query_res != 0){
+                                            return(1);
+                                        }
+                                        res = mysql_store_result(conn);
+                                        if(res == NULL){
+                                            return(2);
+                                        }
+
+                                        //    cres = connection_pdb_server(dbp,res,&row,query);
+
+                                        while((row = mysql_fetch_row(res)) != NULL){
+                                            for(i = 0;i<mysql_num_fields(res);i++ ){
+                                                switch(i){
+                                                    case 0:
+                                                        printf("id:  %s\n",row[i]);
+                                                        break;
+                                                    case 1:
+                                                        printf("metadata_type: %s\n",row[i]);
+                                                        break;
+                                                    case 2:
+                                                        printf("metadata_from_lsn: %s\n",row[i]);
+                                                        break;
+                                                    case 3:
+                                                        printf("metadata_to_lsn: %s\n",row[i]);
+                                                        break;
+                                                    case 4:
+                                                        printf("metadata_last_lsn: %s\n",row[i]);
+                                                        break;
+                                                    case 5:
+                                                        printf("xtrabackup_compact: %s\n",row[i]);
+                                                        break;
+                                                    case 6:
+                                                        printf("is_deleted: %s\n",row[i]);
+                                                        break;
+                                                    case 7:
+                                                        printf("created_datetime: %s\n",row[i]);
+                                                        break;
+                                                    case 8:
+                                                        printf("updated_datetime: %s\n",row[i]);
+                                                        break;
+                                                    case 9:
+                                                        printf("base_backup_directory: %s\n",row[i]);
+                                                        break;
+                                                    case 10:
+                                                        printf("backup_directory_name: %s\n",row[i]);
+                                                        break;
+                                                    case 11:
+                                                        printf("baseon_backup:  %s\n",row[i]);
+                                                        break;
+                                                    case 12:
+                                                        printf("extra_lsndir:  %s\n",row[i]);
+                                                        break;
+                                                    default:
+                                                        printf("Err\n");
+                                                }
+                                            }
+                                            printf("\n");
+                                        }
+                                    }
+                                    else{
+                                        print_history_help();
+                                    }
+                                }
+                                else{
+                                    print_history_help();
+                                }
+                            }
+                            else{
+                                print_history_help();
+                            }
+                        }
+                        else{
+                            print_history_help();
+                        }
+                    }
+                    else{
+                        print_history_help();
+                    }
+                }
+                else{
+                    print_history_help();
+                }
+            }
+            break;
+        default:
+            printf("Err\n");
+    }
+    return(fres);
 }
 
 
@@ -1487,20 +1802,8 @@ int main(int argc,char **argv){
     else if(strstr("restore",para[1].content)){
         print_restore_help();
     }
-    else if(strstr("history",para[1].content)){
-        print_history_help();
-        if(strstr("list",para[2].content)){
-            printf("para[2].pos = %d,para[2].content = %s\n",para[2].pos,para[2].content);
-            if(strstr("backup",para[3].content)){
-                printf("list database backup\n");
-            }
-            else {
-                printf("other history operation\n");
-            }
-        }
-        else{
-            printf("other history operation\n");
-        }
+    else if(strstr("list",para[1].content)){
+         list_backup_history(dbp,para);
     }
     else if(strstr("shell",para[1].content)){
         print_shell_help();
