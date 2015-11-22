@@ -135,7 +135,7 @@ xtrabackup_write_metadata_into_db(META *metadata)
     free(dbsock);
     free(buf);
 
-    return(TRUE);
+    return(0);
 }
 
 int main(int argc,char **argv)
