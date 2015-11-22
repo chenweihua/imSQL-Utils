@@ -59,7 +59,7 @@ function dbbackup () {
                 local BKRDIR=`echo $FBAKPATH|awk -F'/' '{print $NF}'`
                 $REGISTER $BKBDIR $BKRDIR $FULBKDIR
                 if [ $? -eq 0 ];then
-                    rm -f $FULBKBD/$FULBKDIR
+                    rm -rf $FULBKBD/$FULBKDIR
                 fi
 			else
 				return 2
