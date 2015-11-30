@@ -12,12 +12,13 @@
 
 extern char **environ;
 
+//定义本程序内标准字符长度为1024.
 #define DFTLENGTH 1024
 
 /*
     定义两个配置文件
-    .conn用于定义数据库链接信息
-    .inno用户innobackupex的参数信息
+    /etc/sysconfig/pdb/db.properties用于定义数据库链接信息
+    /etc/sysconfig/pdb/innobackupex用户innobackupex的参数信息
 */
 char *pdb_conn_info = "/etc/sysconfig/pdb/db.properties";
 char *inno_conn_info = "/etc/sysconfig/pdb/innobackupex";
@@ -27,18 +28,30 @@ char *inno_conn_info = "/etc/sysconfig/pdb/innobackupex";
 */
 typedef struct metadata{
     char *    metadata_type;
+    //metadata的状态类型.
     int       is_compressed;
+    //innobackup备份文件的状态.
     long long metadata_from_lsn;
+    //metadata的起始lsn号码
     long long metadata_to_lsn;
+    //备份结束时，metadata的结束lsn号码
     long long metadata_last_lsn;
+    //备份结束时，metadata的最新lsn号码
     int       xtrabackup_compact;
+    //本次备份是否是compact备份，compact备份只包含主键，不包含二级索引。所以，此类型的备份相比于完整备份占用的磁盘空间更少.
     char *    base_backup_directory;
+    //备份文件存放的基础路径
     char *    backup_directory_name;
+    //备份文件的名称
     char *    baseon_backup;
+    //完整备份的名称
     char *    extra_lsndir;
+    //xtrabackup_checkpoints文件保存的路径.
 }META;
     
-
+/*
+    定义连接到数据库用到的参数。 
+*/
 typedef struct dbparams{
     char * host;
     char * user;
