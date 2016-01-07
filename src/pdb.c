@@ -392,16 +392,10 @@ xtrabackup_write_metadata_into_db(char *hisdb,META *metadata)
 int xtrabackup_read_metadata_from_db_callback(void *arg,int nr,char **values,char **names)
 {
     int i;
-    char *buf =NULL;
 
     META *pdata = NULL;
     pdata = (META *)arg;
 
-    buf = (char *)malloc(sizeof(char)*DFTLENGTH);
-    memset(buf,0,sizeof(char)*DFTLENGTH);
-
-
-    buf = (char *)arg;
     for(i=0;i<nr;i++){
         switch(i){
             case 0:
@@ -420,7 +414,7 @@ int xtrabackup_read_metadata_from_db_callback(void *arg,int nr,char **values,cha
                 values[i] != NULL?pdata->xtrabackup_compact=atoi(values[i]):0;
                 break;
             case 5:
-                pdata->base_backup_directory;
+                snprintf(pdata->base_backup_directory,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
                 break;
             case 6:
                 snprintf(pdata->base_backup_directory,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
@@ -1787,8 +1781,8 @@ static int list_backup_history_callbak(void *arg,int nr,char **values,char **nam
                     printf("Err\n");
             }
         }
-        printf("\n");
-
+    printf("\n");
+    return(0);
 }
 
 int list_backup_history(char *hisdb,PARA *para){

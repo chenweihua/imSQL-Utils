@@ -1,5 +1,5 @@
 Name:       ParateraDB-Utils	
-Version:    1.0.11
+Version:    2.0.1
 Release:	1%{?dist}
 Summary:	ParateraDB Utils Tools.
 
@@ -22,7 +22,7 @@ AutoReq: no
 %global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(ReadKeyMini\\)$
 %global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(Transformers\\)$
 
-Requires:       mailx tar openssl grep coreutils procps shadow-utils perl time pigz ParateraDB-Backup ParateraDB-Server-server-56 ParateraDB-Server-client-56	
+Requires:       mailx tar openssl grep coreutils procps shadow-utils perl time pigz ParateraDB-Backup /usr/bin/mysql
 Requires:       perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
 Requires:       perl(DBD::mysql)
 
