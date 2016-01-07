@@ -10,6 +10,8 @@
 #include <mysql/my_global.h>
 #include <mysql/mysql.h>
 
+#include <sqlite3.h>
+
 extern char **environ;
 
 //定义本程序内标准字符长度为1024.
@@ -22,6 +24,7 @@ extern char **environ;
 */
 char *pdb_conn_info = "/etc/sysconfig/pdb/db.properties";
 char *inno_conn_info = "/etc/sysconfig/pdb/innobackupex";
+char *hisdb = "/etc/sysconfig/pdb/hisdb";
 
 /*
     定义metadata的结构体，用于保存innobackupex的metadata数据。 

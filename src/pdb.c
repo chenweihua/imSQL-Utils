@@ -1,11 +1,11 @@
 #include "pdb.h"
 
 /***********************************************************************
- *print help information.
- *@return TRUE on success,FALSE on failure.
- * Author:  Tian, Lei [tianlei@paratera.com]
- * Date:    20151019PM1318
-*/
+ *打印出pdb命令的总帮助信息.
+ *返回值：本函数无返回值.
+ *作者:  Tian, Lei [tianlei@paratera.com]
+ *时间:    20151019PM1318
+***********************************************************************/
 void print_main_help(void)
 {
     char *help_msgs = "Usage: \n \
@@ -20,10 +20,10 @@ void print_main_help(void)
 }
 
 /***********************************************************************
- *print help information.
- *@return TRUE on success,FALSE on failure.
- * Author:  Tian, Lei [tianlei@paratera.com]
- * Date:    20151019PM1318
+ *打印出pdb backup备份命令的版主信息.
+ *返回值：本函数无返回值.
+ *作者:  Tian, Lei [tianlei@paratera.com]
+ *时间:    20151019PM1318
 */
 void print_backup_help(void)
 {
@@ -46,10 +46,10 @@ void print_backup_help(void)
 
 
 /***********************************************************************
- *print help information.
- *@return TRUE on success,FALSE on failure.
- * Author:  Tian, Lei [tianlei@paratera.com]
- * Date:    20151019PM1318
+ *打印pdb restore恢复命令的帮助信息.
+ *返回值：本函数无返回值.
+ *作者:  Tian, Lei [tianlei@paratera.com]
+ *时间:    20151019PM1318
 */
 void print_restore_help(void)
 {
@@ -71,10 +71,10 @@ void print_restore_help(void)
 
 
 /***********************************************************************
- *print help information.
- *@return TRUE on success,FALSE on failure.
- * Author:  Tian, Lei [tianlei@paratera.com]
- * Date:    20151019PM1318
+ *打印pdb history历史命令的帮助信息.
+ *返回值：本函数无返回值.
+ *作者:  Tian, Lei [tianlei@paratera.com]
+ *时间:    20151019PM1318
 */
 void print_history_help(void)
 {
@@ -90,10 +90,10 @@ void print_history_help(void)
 
 
 /***********************************************************************
- *print help information.
- *@return TRUE on success,FALSE on failure.
- * Author:  Tian, Lei [tianlei@paratera.com]
- * Date:    20151019PM1318
+ *打印出pdb shell命令的帮助信息.
+ *返回值：本函数无返回值.
+ *作者:  Tian, Lei [tianlei@paratera.com]
+ *时间:    20151019PM1318
 */
 void print_shell_help(void)
 {
@@ -102,94 +102,12 @@ void print_shell_help(void)
     printf("%s",help_msgs);
 }
 
-
-/***********************************************************************
- *print help messages.
- *@return TRUE on success,FALSE on failure.
- * Author:  Tian, Lei [tianlei@paratera.com]
- * Date:    20151019PM1318
-*/
-int help(void)
-{
-    return(0);
-}
-
-/**********************************************************************
- *Read xtrabackup_checkpoints in xtrabackup directory.
- *Save metadata informations to metadata struct.
- *@Return TRUE on success.FALSE on failure.
- *Author: Tian, Lei [tianlei@paratera.com]
- *Date: 20151019PM1713
- *********************************************************************/
-static my_bool
-read_xtrabackup_checkpoint_file(char *extra_lsndir,META *metadata)
-{
-    FILE *fp = NULL;
-    my_bool  r = TRUE;
-    int  t;
-
-
-    static char *chk = NULL;
-    chk = (char *)malloc(sizeof(char)*DFTLENGTH/2);
-    memset(chk,0,DFTLENGTH/2);
-
-    
-
-    //read backup_directory_name files.
-    snprintf(chk,DFTLENGTH/2-1,"%s/xtrabackup_checkpoints",extra_lsndir);
-    if(strlen(chk) <= 0){
-        return(FALSE);
-    }
-
-    fp = fopen(chk,"r");
-    if(fp == NULL){
-        perror("fopen()");
-        return(FALSE);
-    }
-
-    if (fscanf(fp, "backup_type = %s\n", metadata->metadata_type)
-                    != 1) {
-            r = FALSE;
-            goto end;
-    }
-    if (fscanf(fp, "from_lsn = %lld\n", &metadata->metadata_from_lsn)
-            != 1) {
-        r = FALSE;
-        goto end;
-    }
-    if (fscanf(fp, "to_lsn = %lld\n", &metadata->metadata_to_lsn)
-            != 1) {
-        r = FALSE;
-        goto end;
-    }
-    if (fscanf(fp, "last_lsn = %lld\n", &metadata->metadata_last_lsn)
-            != 1) {
-        metadata->metadata_last_lsn = 0;
-    }
-    /* Optional field */
-    if (fscanf(fp, "compact = %d\n", &t) == 1) {
-        metadata->xtrabackup_compact = (t == 1);
-    } else {
-        metadata->xtrabackup_compact  = 0;
-    }
-
-    snprintf(metadata->extra_lsndir,DFTLENGTH/2-1,"%s",extra_lsndir);
-
-
-end:
-    fclose(fp);
-    free(chk);
-
-    return(r);
-}
-
-
 /***********************************************************************
  *parse database connection params informations,save informations into DBP struct.
  *@return TRUE on success,FALSE on failure.
- * Author:  Tian, Lei [tianlei@paratera.com]
- * Date:    20151019PM1318
-*/
+ *Author:  Tian, Lei [tianlei@paratera.com]
+ *Date:    20151019PM1318
+ ************************************************************************/
 int parse_database_conn_params(char *filename,DBP *dbp){
     FILE *fp = NULL;
     int res = 0;
@@ -229,11 +147,79 @@ end:
 
 
 
+/**********************************************************************
+ *从xtrabackup命令备份生成的metadata文件中读取meta数据，然后把这些数据保存到META结构体中.
+ *返回值：正常返回0，否则返回非零
+ *作者: Tian, Lei [tianlei@paratera.com]
+ *时间: 20151019PM1713
+ *********************************************************************/
+static my_bool
+read_xtrabackup_checkpoint_file(char *extra_lsndir,META *metadata)
+{
+    //创建一个文件描述符用于读取xtrabackup命令生成的xtrabackup_checkpoints文件 
+    FILE *fp = NULL;
+    my_bool  r = TRUE;
+    int  t;
+    
+    //创建局部变量用于保存xtrabackup_checkpoints文件的绝对路径
+    static char *chk = NULL;
+    chk = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    memset(chk,0,DFTLENGTH/2);
+
+    //读取xtrabackup_checkpoints文件.
+    snprintf(chk,DFTLENGTH/2-1,"%s/xtrabackup_checkpoints",extra_lsndir);
+    if(strlen(chk) <= 0){
+        return(1);
+    }
+
+    fp = fopen(chk,"r");
+    if(fp == NULL){
+        perror("fopen()");
+        return(2);
+    }
+
+    if (fscanf(fp, "backup_type = %s\n", metadata->metadata_type)
+                    != 1) {
+            r = 3;
+            goto end;
+    }
+    if (fscanf(fp, "from_lsn = %lld\n", &metadata->metadata_from_lsn)
+            != 1) {
+        r = 4;
+        goto end;
+    }
+    if (fscanf(fp, "to_lsn = %lld\n", &metadata->metadata_to_lsn)
+            != 1) {
+        r = 5;
+        goto end;
+    }
+    if (fscanf(fp, "last_lsn = %lld\n", &metadata->metadata_last_lsn)
+            != 1) {
+        metadata->metadata_last_lsn = 0;
+    }
+    /*compact表示只备份主键索引，不备份二级索引 */
+    if (fscanf(fp, "compact = %d\n", &t) == 1) {
+        metadata->xtrabackup_compact = (t == 1);
+    } else {
+        metadata->xtrabackup_compact  = 0;
+    }
+
+    snprintf(metadata->extra_lsndir,DFTLENGTH/2-1,"%s",extra_lsndir);
+
+//错误处理
+end:
+    fclose(fp);
+    free(chk);
+
+    return(r);
+}
+
+
 /***********************************************************************
- * save innobackupex params informations informations into DBP struct.
- *@return TRUE on success,FALSE on failure.
- * Author:  Tian, Lei [tianlei@paratera.com]
- * Date:    20151019PM1318
+ *把/etc/sysconfig/pdb/innobackupex文件的内容保存到INNOBAK结构体中.
+ *返回值：正常返回0，否则返回非零
+ *作者:  Tian, Lei [tianlei@paratera.com]
+ *时间:    20151019PM1318
 */
 int parse_innobackupex_params(char *filename,INNOBAK *innobak){
     FILE *fp = NULL;
@@ -296,77 +282,98 @@ end:
 }
 
 /***********************************************************************
- * connection pdb server.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
-*/
-int connection_pdb_server(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,char *query){
-    //创建MySQL数据库连接符。
-    MYSQL *conn = NULL;
-    conn = mysql_init(NULL);
-    //连接到目标数据库
-    mysql_real_connect(conn,dbp->host,dbp->user,dbp->pass,NULL,dbp->port,dbp->socket,0);
+ *判断指定的表是否存在
+ *返回值：存在返回1，否则返回0
+ *作者：Tian, Lei [tianlei@paratera.com]
+ *时间：20160203AM1046
+ * **********************************************************************/
+static int chk_table_exists(void *arg,int nr,char **values,char **names)
+{
+    static char *isExist;
+    int i;
 
-    int mysql_query_res = 0;
-    mysql_query_res = mysql_query(conn,query);
-    if(mysql_query_res != 0){
-        return(1);
-    }
-
-    res = mysql_store_result(conn);
-    if(res == NULL){
-        return(2);
-    }
-
-    *row = mysql_fetch_row(res);
-    return(0);
-}
-
-/***********************************************************************
- * connection pdb server.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
-*/
-int connection_pdb_server_2(DBP *dbp,MYSQL_RES *res,char *query){
-    //创建MySQL数据库连接符。
-    MYSQL *conn = NULL;
-    conn = mysql_init(NULL);
-    //连接到目标数据库
-    mysql_real_connect(conn,dbp->host,dbp->user,dbp->pass,NULL,dbp->port,dbp->socket,0);
-
-    int mysql_query_res = 0;
-    mysql_query_res = mysql_query(conn,query);
-    if(mysql_query_res != 0){
-        return(1);
-    }
-
-    res = mysql_store_result(conn);
-    if(res == NULL){
-        return(2);
+    isExist = (char *)arg;
+    for(i=0;i<nr;i++){
+        sprintf(isExist,"%s",values[i]);
     }
     return(0);
 }
 
 /***********************************************************************
- *Write backup meata info into MySQL Database.
- *@return TRUE on success,FALSE on failure.
- *Author: Tian, Lei [tianlei@paratera.com]
- *Date:20151019PM1318
+ *创建hisdb数据库及其所需的数据库对象
+ *返回值：正常返回0，否则返回非0
+ *作者：Tian, Lei [tianlei@paratera.com]
+ *时间：20160202PM1603
+ **********************************************************************/
+static int create_hisdb_objects(char *hisdb)
+{
+    //定义一个变量用于保存指定的表是否存在
+    static char *isTableExist;
+    isTableExist = (char *)malloc(sizeof(char)*DFTLENGTH/8);
+    memset(isTableExist,0,sizeof(char)*DFTLENGTH/8);
+
+    //创建一个字符创指针用于保存后面的SQL语句。
+    char *query = NULL;
+
+    //创建一个sqlite3文件
+    sqlite3 *db;
+    sqlite3_open(hisdb,&db);
+
+    //创建保存备份信息的表
+    query = (char *)malloc(sizeof(char)*DFTLENGTH);
+    memset(query,0,sizeof(char)*DFTLENGTH);
+
+    strncpy(query,"SELECT COUNT(*) FROM sqlite_master where type='table' and name='t_xtra_backup_metadata'",sizeof(char)*DFTLENGTH-1);
+    sqlite3_exec(db,query,chk_table_exists,isTableExist,NULL);
+
+    if(strcmp(isTableExist,"0") == 0 ){
+        memset(query,0,sizeof(char)*DFTLENGTH);
+        strncpy(query," \
+                CREATE TABLE t_xtra_backup_metadata ( \
+                    id integer NOT NULL PRIMARY KEY AUTOINCREMENT, \
+                    metadata_type varchar(256) NOT NULL DEFAULT 'full-backuped', \
+                    is_compressed int  NOT NULL DEFAULT 0, \
+                    metadata_from_lsn bigint NOT NULL, \
+                    metadata_to_lsn bigint NOT NULL, \
+                    metadata_last_lsn bigint NOT NULL, \
+                    xtrabackup_compact int DEFAULT NULL, \
+                    is_deleted int NOT NULL DEFAULT '0', \
+                    created_datetime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+                    updated_datetime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+                    base_backup_directory varchar(512) NOT NULL DEFAULT '/Database/Backup', \
+                    backup_directory_name varchar(512) NOT NULL, \
+                    baseon_backup varchar(256) DEFAULT NULL, \
+                    extra_lsndir varchar(512) DEFAULT NULL \
+                    )",sizeof(char)*DFTLENGTH-1);
+
+        sqlite3_exec(db,query,NULL,NULL,NULL);
+    }
+
+    return(0);
+}
+
+/***********************************************************************
+ *把xtrabackup命令生成的xtrabackup_checkpoints信息保存到sqlite3数据库中.
+ *返回值：正常返回0，否则返回非0
+ *作者: Tian, Lei [tianlei@paratera.com]
+ *时间: 20151019PM1318
  ************************************************************************/
 static my_bool
-xtrabackup_write_metadata_into_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *metadata)
+xtrabackup_write_metadata_into_db(char *hisdb,META *metadata)
 {
     int cres = 0;
+    sqlite3 *db;
+
+    sqlite3_open(hisdb,&db);
+
     //保存查询语句的缓冲区
     char *query = NULL;
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
 
-    snprintf(query,DFTLENGTH*2-1,"INSERT INTO sysadmin.t_xtra_backup_metadata(metadata_type,is_compressed,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir) VALUES('%s',%d,%lld,%lld,%lld,%lld,'%s','%s','%s','%s')",metadata->metadata_type,metadata->is_compressed,(long long)metadata->metadata_from_lsn,(long long)metadata->metadata_to_lsn,(long long)metadata->metadata_last_lsn,(int)metadata->xtrabackup_compact,metadata->base_backup_directory,metadata->backup_directory_name,metadata->baseon_backup,metadata->extra_lsndir);
+    snprintf(query,DFTLENGTH*2-1,"INSERT INTO t_xtra_backup_metadata(metadata_type,is_compressed,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir) VALUES('%s',%d,%lld,%lld,%lld,%lld,'%s','%s','%s','%s')",metadata->metadata_type,metadata->is_compressed,(long long)metadata->metadata_from_lsn,(long long)metadata->metadata_to_lsn,(long long)metadata->metadata_last_lsn,(int)metadata->xtrabackup_compact,metadata->base_backup_directory,metadata->backup_directory_name,metadata->baseon_backup,metadata->extra_lsndir);
 
-    cres = connection_pdb_server(dbp,res,&row,query);
+    sqlite3_exec(db,query,NULL,NULL,NULL);
     if(cres == 0){
         return(0);
     }
@@ -377,59 +384,85 @@ xtrabackup_write_metadata_into_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *me
 }
 
 /***********************************************************************
- *Read backup meata info from MySQL Database.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
+ *从hisdb中读取最新的一条metadata数据的回调函数.
+ *返回值：成功返回0，否则返回非0
+ *作者: Tian, Lei [tianlei@paratera.com]
+ *时间: 20151019PM1318
+*/
+int xtrabackup_read_metadata_from_db_callback(void *arg,int nr,char **values,char **names)
+{
+    int i;
+    char *buf =NULL;
+
+    META *pdata = NULL;
+    pdata = (META *)arg;
+
+    buf = (char *)malloc(sizeof(char)*DFTLENGTH);
+    memset(buf,0,sizeof(char)*DFTLENGTH);
+
+
+    buf = (char *)arg;
+    for(i=0;i<nr;i++){
+        switch(i){
+            case 0:
+                snprintf(pdata->metadata_type,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
+                break;
+            case 1:
+                values[i] != NULL?pdata->metadata_from_lsn=atoll(values[i]):0;
+                break;
+            case 2:
+                values[i] != NULL?pdata->metadata_to_lsn=atoll(values[i]):0;
+                break;
+            case 3:
+                values[i] != NULL?pdata->metadata_last_lsn=atoll(values[i]):0;
+                break;
+            case 4:
+                values[i] != NULL?pdata->xtrabackup_compact=atoi(values[i]):0;
+                break;
+            case 5:
+                pdata->base_backup_directory;
+                break;
+            case 6:
+                snprintf(pdata->base_backup_directory,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
+                break;
+            case 7:
+                snprintf(pdata->baseon_backup,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
+                break;
+            case 8:
+                snprintf(pdata->extra_lsndir,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
+                break;
+            default:
+                return(1);
+        }
+    }
+    return(0);
+}
+
+/***********************************************************************
+ *从hisdb中读取最新的一条metadata数据.
+ *返回值：成功返回0，否则返回非0
+ *作者: Tian, Lei [tianlei@paratera.com]
+ *时间: 20151019PM1318
 */
 static my_bool
-xtrabackup_read_metadata_from_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *metadata)
+xtrabackup_read_metadata_from_db(char *hisdb,META *metadata)
 {
 
     int i =0;
     int tmpi = 0;
     static int cres =0;
     char *query = NULL;
+
+    sqlite3 *db;
+    sqlite3_open(hisdb,&db);
     
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
 
-    snprintf(query,DFTLENGTH*2,"%s","SELECT metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir FROM sysadmin.t_xtra_backup_metadata WHERE metadata_type='full-backuped' and is_deleted = 0 ORDER BY id DESC LIMIT 1");
+    snprintf(query,DFTLENGTH*2,"%s","SELECT metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir FROM t_xtra_backup_metadata WHERE metadata_type='full-backuped' and is_deleted = 0 ORDER BY id DESC LIMIT 1");
 
-    cres = connection_pdb_server(dbp,res,&row,query);
+    sqlite3_exec(db,query,xtrabackup_read_metadata_from_db_callback,metadata,NULL);
 
-    if(row != NULL){
-
-        for(i=0;i<9;i++)
-        {
-            switch(i){
-                case 0:
-                    sprintf(metadata->metadata_type,"%s",row[i]);
-                case 1:
-                    metadata->metadata_from_lsn = (row[i] !=NULL? atoll(row[i]):0);
-                case 2:
-                    metadata->metadata_to_lsn = (row[i] !=NULL? atoll(row[i]):0);
-                case 3:
-                    metadata->metadata_last_lsn= (row[i] !=NULL? atoll(row[i]):0);
-                case 4:
-                    metadata->xtrabackup_compact = (row[i] !=NULL? atoll(row[i]):0);
-                case 5:
-                    snprintf(metadata->base_backup_directory,DFTLENGTH/8,row[i]);
-                case 6:
-                    snprintf(metadata->backup_directory_name,DFTLENGTH/8,row[i]);
-                case 7:
-                    snprintf(metadata->baseon_backup,DFTLENGTH/8,row[i]);
-                case 8:
-                    snprintf(metadata->extra_lsndir,DFTLENGTH/8,row[i]);
-                default:
-                    tmpi=0;
-
-            }
-        }
-    }
-    else{
-        return(FALSE);
-    }
     return(TRUE);
 }
 
@@ -440,27 +473,13 @@ xtrabackup_read_metadata_from_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,META *met
  * Date:20151019PM1318
 */
 static my_bool
-read_full_backup_name_from_db(DBP *dbp,MYSQL_RES *res,MYSQL_ROW row,char *buf)
+read_full_backup_name_from_db(char *hisdb,META *metadata,char *buf)
 {
 
-    int i =0;
-    int tmpi = 0;
-    static int cres =0;
-    char *query = NULL;
+    xtrabackup_read_metadata_from_db(hisdb,metadata);
     
-    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
-    memset(query,0,DFTLENGTH*2);
+    snprintf(buf,DFTLENGTH/8,metadata->backup_directory_name);
 
-    snprintf(query,DFTLENGTH*2,"%s","SELECT metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir FROM sysadmin.t_xtra_backup_metadata WHERE metadata_type='full-backuped' and is_deleted = 0 ORDER BY id DESC LIMIT 1");
-
-    cres = connection_pdb_server(dbp,res,&row,query);
-
-    if(row != NULL){
-            snprintf(buf,DFTLENGTH/8,row[6]);
-    }
-    else{
-        return(FALSE);
-    }
     return(TRUE);
 }
 
@@ -557,20 +576,8 @@ create_full_backup_directory_and_metadata(INNOBAK *innobak,META *metadata)
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
-int database_is_exists(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para){
-    int cres = 0;
-    int fres = 0;
-    char *query = NULL;
-    query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
-    memset(query,0,DFTLENGTH*2);
-
-    snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from information_schema.SCHEMATA WHERE SCHEMA_NAME='",para[3].content,"'");
-                                
-    cres = connection_pdb_server(dbp,res,row,query);
-    if(cres == 0){
-       fres = atoi(*row[0]);
-    }
-    return(fres);
+int database_is_exists(PARA *para){
+    return(1);
 }
 
 /********************n***************************************************
@@ -579,20 +586,36 @@ int database_is_exists(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para){
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
-int database_backup_is_exists(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para){
+
+int database_backup_is_exists_callback(void *arg,int nr,char **values,char **names)
+{
+    int i;
+    char *id;
+    id = (char *)arg;
+
+    sprintf(id,"%s",values[0]);
+    return(0);
+}
+
+char * database_backup_is_exists(char *hisdb,PARA *para){
     int cres = 0;
     int fres = 0;
     char *query = NULL;
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
 
-    snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from sysadmin.t_xtra_backup_metadata WHERE id='",para[2].content,"'");
+    char *result;
+    result = (char *)malloc(sizeof(char)*DFTLENGTH/4);
+    memset(result,0,sizeof(char)*DFTLENGTH/4);
+
+    sqlite3 *db;
+    sqlite3_open(hisdb,&db);
+
+    snprintf(query,DFTLENGTH*2,"%s%s%s","select COUNT(*) from t_xtra_backup_metadata WHERE id='",para[2].content,"'");
+
+    sqlite3_exec(db,query,database_backup_is_exists_callback,result,NULL);
                                 
-    cres = connection_pdb_server(dbp,res,row,query);
-    if(cres == 0){
-       fres = atoi(*row[0]);
-    }
-    return(fres);
+    return(result);
 }
 
 /********************n***************************************************
@@ -601,31 +624,83 @@ int database_backup_is_exists(DBP *dbp,MYSQL_RES *res,MYSQL_ROW *row,PARA *para)
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
 */
-int read_innobackup_content_from_db(DBP *dbp,PARA *para,META *metadata){
-    MYSQL_RES *res = NULL;
-    MYSQL_ROW row;
+int read_innobackup_content_from_db_callback(void *arg,int nr,char **values,char **names)
+{
+    int i;
+
+    META *pdata = NULL;
+
+    pdata = (META *)arg;
+    for(i=0;i<nr;i++){
+        switch(i){
+            case 0:
+                printf("id:  %s\n",values[i]);
+                break;
+            case 1:
+                snprintf(pdata->metadata_type,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
+                printf("metadata_type: %s\n",values[i]);
+                break;
+            case 2:
+                printf("metadata_from_lsn: %s\n",values[i]);
+                break;
+            case 3:
+                printf("metadata_to_lsn: %s\n",values[i]);
+                break;
+            case 4:
+                printf("metadata_last_lsn: %s\n",values[i]);
+                break;
+            case 5:
+                printf("xtrabackup_compact: %s\n",values[i]);
+                break;
+            case 6:
+                printf("is_deleted: %s\n",values[i]);
+                break;
+            case 7:
+                printf("created_datetime: %s\n",values[i]);
+                break;
+            case 8:
+                printf("updated_datetime: %s\n",values[i]);
+                break;
+            case 9:
+                snprintf(pdata->base_backup_directory,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
+                printf("base_backup_directory: %s\n",values[i]);
+                break;
+            case 10:
+                snprintf(pdata->backup_directory_name,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
+                printf("backup_directory_name: %s\n",values[i]);
+                break;
+            case 11:
+                snprintf(pdata->baseon_backup,DFTLENGTH/8-1,"%s",values[i] != NULL?values[i]:"");
+                printf("baseon_backup:  %s\n",values[i]);
+                break;
+            case 12:
+                printf("extra_lsndir:  %s\n",values[i]);
+                break;
+            default:
+                printf("Err\n");
+        }
+    }
+
+}
+
+int read_innobackup_content_from_db(char *hisdb,PARA *para,META *metadata){
     int cres = 0;
     int fres = 0;
     int pres = 0;
     int i = 0;
-    int backup_is_exists = 0;
+    char *backup_is_exists = NULL;
+    backup_is_exists = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    memset(backup_is_exists,0,sizeof(char)*DFTLENGTH/2);
+
     my_ulonglong num_rows = 0;
     char *query = NULL;
     
-    //获取数据库参数
-    pres = parse_database_conn_params(pdb_conn_info,dbp);
-
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
+
+    sqlite3 *db;
+    sqlite3_open(hisdb,&db);
     
-    //创建MySQL数据库连接符。
-    MYSQL *conn = NULL;
-    conn = mysql_init(NULL);
-    //连接到目标数据库
-    mysql_real_connect(conn,dbp->host,dbp->user,dbp->pass,NULL,dbp->port,dbp->socket,0);
-
-    int mysql_query_res = 0;
-
     switch(para->argclen){
         case 2:
             print_history_help();
@@ -634,74 +709,12 @@ int read_innobackup_content_from_db(DBP *dbp,PARA *para,META *metadata){
             print_history_help();
             break;
         case 4:
-            backup_is_exists = database_backup_is_exists(dbp,res,&row,para);
-            if(backup_is_exists>0){
+            backup_is_exists = database_backup_is_exists(hisdb,para);
+            if(strcmp(backup_is_exists,"1") == 0){
                 if(strstr("into",para[3].content)){
                     if(strlen(para[4].content) != 0 ){
-                        snprintf(query,DFTLENGTH*2,"%s%s","select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from sysadmin.t_xtra_backup_metadata where id =",para[2].content);
-                        mysql_query_res = mysql_query(conn,query);
-                        if(mysql_query_res != 0){
-                            return(1);
-                        }
-                        res = mysql_store_result(conn);
-                        if(res == NULL){
-                            return(2);
-                        }
-
-                        //    cres = connection_pdb_server(dbp,res,&row,query);
-
-                        while((row = mysql_fetch_row(res)) != NULL){
-                            for(i = 0;i<mysql_num_fields(res);i++ ){
-                                switch(i){
-                                    case 0:
-                                        printf("id:  %s\n",row[i]);
-                                        break;
-                                    case 1:
-                                        snprintf(metadata->metadata_type,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
-                                        printf("metadata_type: %s\n",row[i]);
-                                        break;
-                                    case 2:
-                                        printf("metadata_from_lsn: %s\n",row[i]);
-                                        break;
-                                    case 3:
-                                        printf("metadata_to_lsn: %s\n",row[i]);
-                                        break;
-                                    case 4:
-                                        printf("metadata_last_lsn: %s\n",row[i]);
-                                        break;
-                                    case 5:
-                                        printf("xtrabackup_compact: %s\n",row[i]);
-                                        break;
-                                    case 6:
-                                        printf("is_deleted: %s\n",row[i]);
-                                        break;
-                                    case 7:
-                                        printf("created_datetime: %s\n",row[i]);
-                                        break;
-                                    case 8:
-                                        printf("updated_datetime: %s\n",row[i]);
-                                        break;
-                                    case 9:
-                                        snprintf(metadata->base_backup_directory,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
-                                        printf("base_backup_directory: %s\n",row[i]);
-                                        break;
-                                    case 10:
-                                        snprintf(metadata->backup_directory_name,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
-                                        printf("backup_directory_name: %s\n",row[i]);
-                                        break;
-                                    case 11:
-                                        snprintf(metadata->baseon_backup,DFTLENGTH/8-1,"%s",row[i] != NULL?row[i]:"");
-                                        printf("baseon_backup:  %s\n",row[i]);
-                                        break;
-                                    case 12:
-                                        printf("extra_lsndir:  %s\n",row[i]);
-                                        break;
-                                    default:
-                                        printf("Err\n");
-                                }
-                            }
-                            printf("\n");
-                        }
+                        snprintf(query,DFTLENGTH*2,"%s%s","select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from t_xtra_backup_metadata where id =",para[2].content);
+                        sqlite3_exec(db,query,read_innobackup_content_from_db_callback,metadata,NULL);
                     }
                 }
             }
@@ -709,76 +722,14 @@ int read_innobackup_content_from_db(DBP *dbp,PARA *para,META *metadata){
         case 5:
             break;
         case 6:
-            backup_is_exists = database_backup_is_exists(dbp,res,&row,para);
-            if(backup_is_exists>0){
+            backup_is_exists = database_backup_is_exists(hisdb,para);
+            if(strcmp(backup_is_exists,"1") == 0){
                 if(strstr("from",para[3].content)){
                     if(strlen(para[4].content) != 0 ){
                         if(strstr("into",para[5].content)){
                             if(strlen(para[6].content) != 0){
-                                snprintf(query,DFTLENGTH*2,"%s%s","select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from sysadmin.t_xtra_backup_metadata where id =",para[2].content);
-                                mysql_query_res = mysql_query(conn,query);
-                                if(mysql_query_res != 0){
-                                    return(1);
-                                }
-                                res = mysql_store_result(conn);
-                                if(res == NULL){
-                                    return(2);
-                                }
-
-                                //    cres = connection_pdb_server(dbp,res,&row,query);
-
-                                while((row = mysql_fetch_row(res)) != NULL){
-                                    for(i = 0;i<mysql_num_fields(res);i++ ){
-                                        switch(i){
-                                            case 0:
-                                                printf("id:  %s\n",row[i]);
-                                                break;
-                                            case 1:
-                                                snprintf(metadata->metadata_type,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
-                                                printf("metadata_type: %s\n",row[i]);
-                                                break;
-                                            case 2:
-                                                printf("metadata_from_lsn: %s\n",row[i]);
-                                                break;
-                                            case 3:
-                                                printf("metadata_to_lsn: %s\n",row[i]);
-                                                break;
-                                            case 4:
-                                                printf("metadata_last_lsn: %s\n",row[i]);
-                                                break;
-                                            case 5:
-                                                printf("xtrabackup_compact: %s\n",row[i]);
-                                                break;
-                                            case 6:
-                                                printf("is_deleted: %s\n",row[i]);
-                                                break;
-                                            case 7:
-                                                printf("created_datetime: %s\n",row[i]);
-                                                break;
-                                            case 8:
-                                                printf("updated_datetime: %s\n",row[i]);
-                                                break;
-                                            case 9:
-                                                snprintf(metadata->base_backup_directory,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
-                                                printf("base_backup_directory: %s\n",row[i]);
-                                                break;
-                                            case 10:
-                                                snprintf(metadata->backup_directory_name,DFTLENGTH/8-1,"%s",row[i] !=NULL?row[i]:"");
-                                                printf("backup_directory_name: %s\n",row[i]);
-                                                break;
-                                            case 11:
-                                                snprintf(metadata->baseon_backup,DFTLENGTH/8-1,"%s",row[i] != NULL?row[i]:"");
-                                                printf("baseon_backup:  %s\n",row[i]);
-                                                break;
-                                            case 12:
-                                                printf("extra_lsndir:  %s\n",row[i]);
-                                                break;
-                                            default:
-                                                printf("Err\n");
-                                        }
-                                    }
-                                    printf("\n");
-                                }
+                                snprintf(query,DFTLENGTH*2,"%s%s","select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from t_xtra_backup_metadata where id =",para[2].content);
+                                sqlite3_exec(db,query,read_innobackup_content_from_db_callback,metadata,NULL);
                             }
                         }
                     }
@@ -958,7 +909,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                 read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
 
-                                xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+                                xtrabackup_write_metadata_into_db(hisdb,meta);
 
                             }
                             else{
@@ -999,8 +950,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                 snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
 
-                                read_full_backup_name_from_db(dbp,res,row,ibaseon_backup);
-                                xtrabackup_read_metadata_from_db(dbp,res,row,meta);
+                                read_full_backup_name_from_db(hisdb,meta,ibaseon_backup);
+                                xtrabackup_read_metadata_from_db(hisdb,meta);
 
                                 snprintf(iincremental,DFTLENGTH/8,"%s","--incremental");
                                 snprintf(iincremental_lsn,DFTLENGTH*2,"%s%lld","--incremental-lsn=",meta->metadata_to_lsn);
@@ -1013,7 +964,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                 snprintf(meta->baseon_backup,DFTLENGTH/8,"%s",ibaseon_backup);
                                 snprintf(meta->backup_directory_name,DFTLENGTH*2,"%s",ibackup_file_name);
 
-                                xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+                                xtrabackup_write_metadata_into_db(hisdb,meta);
 
                                 printf("onlie incremental backup all\n");
                             }
@@ -1051,7 +1002,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                         if(strstr(para[5].content,"online")){
                             if(strstr(para[6].content,"to")){
                                 if(strlen(para[7].content) != 0){
-                                    cres = database_is_exists(dbp,res,&row,para);
+                                    cres = database_is_exists(para);
                                     if(cres >0){
                                         //pdb backup db basedb full online to '/dbbackup' 
                                         /*得出当前时间戳*/ 
@@ -1079,7 +1030,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                         read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
 
-                                        xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+                                        xtrabackup_write_metadata_into_db(hisdb,meta);
 
                                     }
                                     else{
@@ -1106,7 +1057,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                         if(strstr(para[5].content,"online")){
                             if(strstr(para[6].content,"to")){
                                 if(strlen(para[7].content) != 0){
-                                    cres = database_is_exists(dbp,res,&row,para);
+                                    cres = database_is_exists(para);
                                     if(cres >0){
                                         /*得出当前时间戳*/ 
                                         ct = time(NULL);
@@ -1127,8 +1078,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                         snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
 
-                                        read_full_backup_name_from_db(dbp,res,row,ibaseon_backup);
-                                        xtrabackup_read_metadata_from_db(dbp,res,row,meta);
+                                        read_full_backup_name_from_db(hisdb,meta,ibaseon_backup);
+                                        xtrabackup_read_metadata_from_db(hisdb,meta);
 
                                         snprintf(iincremental,DFTLENGTH/8,"%s","--incremental");
                                         snprintf(iincremental_lsn,DFTLENGTH*2,"%s%lld","--incremental-lsn=",meta->metadata_to_lsn);
@@ -1141,7 +1092,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                         snprintf(meta->baseon_backup,DFTLENGTH/8,"%s",ibaseon_backup);
                                         snprintf(meta->backup_directory_name,DFTLENGTH*2,"%s",ibackup_file_name);
 
-                                        xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+                                        xtrabackup_write_metadata_into_db(hisdb,meta);
 
                                     }
                                     else{
@@ -1230,7 +1181,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                     read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
 
-                                    xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+                                    xtrabackup_write_metadata_into_db(hisdb,meta);
 
                                 }
                                 else{
@@ -1279,8 +1230,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                     snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
 
 
-                                    read_full_backup_name_from_db(dbp,res,row,ibaseon_backup);
-                                    xtrabackup_read_metadata_from_db(dbp,res,row,meta);
+                                    read_full_backup_name_from_db(hisdb,meta,ibaseon_backup);
+                                    xtrabackup_read_metadata_from_db(hisdb,meta);
 
                                     snprintf(iincremental,DFTLENGTH/8,"%s","--incremental");
                                     snprintf(iincremental_lsn,DFTLENGTH*2,"%s%lld","--incremental-lsn=",meta->metadata_to_lsn);
@@ -1295,7 +1246,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                                     
                                     meta->is_compressed = 1;
 
-                                    xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+                                    xtrabackup_write_metadata_into_db(hisdb,meta);
 
                                     return(0);
                                 }
@@ -1343,7 +1294,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                             if(strstr(para[6].content,"compress")){
                                 if(strstr("to",para[7].content)){
                                     if(strlen(para[8].content) != 0){
-                                        cres = database_is_exists(dbp,res,&row,para);
+                                        cres = database_is_exists(para);
                                         if(cres >0){
                                             //pdb backup db basedb full online compress to '/dbbackup' 
                                             /*得出当前时间戳*/ 
@@ -1369,7 +1320,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                             read_xtrabackup_checkpoint_file(innobak->extra_lsndir,meta);
 
-                                            xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+                                            xtrabackup_write_metadata_into_db(hisdb,meta);
 
                                         }
                                         else{
@@ -1402,7 +1353,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
                             if(strstr("compress",para[6].content)){
                                 if(strstr("to",para[7].content)){
                                     if(strlen(para[8].content) != 0){
-                                        cres = database_is_exists(dbp,res,&row,para);
+                                        cres = database_is_exists(para);
                                         if(cres >0){
                                             //pdb backup db basedb incremental online compress to '/dbbackup' 
                                             /*得出当前时间戳*/ 
@@ -1424,8 +1375,8 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                             snprintf(meta->backup_directory_name,DFTLENGTH/2-1,"%s",ibackup_file_name);
 
-                                            read_full_backup_name_from_db(dbp,res,row,ibaseon_backup);
-                                            xtrabackup_read_metadata_from_db(dbp,res,row,meta);
+                                            read_full_backup_name_from_db(hisdb,meta,ibaseon_backup);
+                                            xtrabackup_read_metadata_from_db(hisdb,meta);
 
                                             snprintf(iincremental,DFTLENGTH/8,"%s","--incremental");
                                             snprintf(iincremental_lsn,DFTLENGTH*2,"%s%lld","--incremental-lsn=",meta->metadata_to_lsn);
@@ -1440,7 +1391,7 @@ int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
 
                                             meta->is_compressed = 1;
 
-                                            xtrabackup_write_metadata_into_db(dbp,res,row,meta);
+                                            xtrabackup_write_metadata_into_db(hisdb,meta);
 
                                         }
                                         else{
@@ -1504,7 +1455,11 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
 
     MYSQL_RES *res = NULL;
     MYSQL_ROW row;
-    int backup_is_exists = 0;
+
+    char * backup_is_exists = NULL;
+    backup_is_exists = (char *)malloc(sizeof(char)*DFTLENGTH/2);
+    memset(backup_is_exists,0,sizeof(char)*DFTLENGTH/2);
+
     int pres = 0;
 
     char *restore_ops = NULL;
@@ -1530,7 +1485,6 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
     //获取数据库参数
     pres = parse_database_conn_params(pdb_conn_info,dbp);
 
-
     switch(para->argclen){
         case 2:
             print_restore_help();
@@ -1539,12 +1493,12 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
             print_restore_help();
             break;
         case 4:
-            backup_is_exists = database_backup_is_exists(dbp,res,&row,para);
-            if(backup_is_exists>0){
+            backup_is_exists = database_backup_is_exists(hisdb,para);
+            if(strcmp(backup_is_exists,"1") == 0){
                 if(strstr("into",para[3].content)){
                     if(strlen(para[4].content) != 0){
                         //pdb restore 100 into /Database
-                        read_innobackup_content_from_db(dbp,para,metadata);
+                        read_innobackup_content_from_db(hisdb,para,metadata);
                         if(strstr(metadata->metadata_type,"full-backuped")){
                             printf("full-backuped\n");
                             snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",metadata->base_backup_directory,metadata->backup_directory_name,"/usr/bin/xbstream","-x","-C",para[4].content);
@@ -1646,14 +1600,14 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
             print_restore_help();
             break;
         case 6:
-            backup_is_exists = database_backup_is_exists(dbp,res,&row,para);
-            if(backup_is_exists>0){
+            backup_is_exists = database_backup_is_exists(hisdb,para);
+            if(strcmp(backup_is_exists,"1") == 0){
                 if(strstr("from",para[3].content)){
                     if(strlen(para[4].content) != 0){
                         if(strstr("into",para[5].content)){
                             if(strlen(para[6].content) != 0){
                                 //pdb restore 100 from /root/backup into /Database
-                                read_innobackup_content_from_db(dbp,para,metadata);
+                                read_innobackup_content_from_db(hisdb,para,metadata);
                                 if(strstr(metadata->metadata_type,"full-backuped")){
                                     printf("full-backuped\n");
                                     snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",para[4].content,metadata->backup_directory_name,"/usr/bin/xbstream","-x","-C",para[6].content);
@@ -1784,29 +1738,73 @@ int operate_database_history(PARA *para){
  * Author: Tian, Lei [tianlei@paratera.com]
  * Date:20151019PM1318
  */
-int list_backup_history(DBP *dbp,PARA *para){
-    MYSQL_RES *res = NULL;
-    MYSQL_ROW row;
+static int list_backup_history_callbak(void *arg,int nr,char **values,char **names)
+{
+    int i;
+        
+    for(i = 0;i<nr;i++ ){
+            switch(i){
+                case 0:
+                    printf("id:  %s\n",values[i]);
+                    break;
+                case 1:
+                    printf("metadata_type: %s\n",values[i]);
+                    break;
+                case 2:
+                    printf("metadata_from_lsn: %s\n",values[i]);
+                    break;
+                case 3:
+                    printf("metadata_to_lsn: %s\n",values[i]);
+                    break;
+                case 4:
+                    printf("metadata_last_lsn: %s\n",values[i]);
+                    break;
+                case 5:
+                    printf("xtrabackup_compact: %s\n",values[i]);
+                    break;
+                case 6:
+                    printf("is_deleted: %s\n",values[i]);
+                    break;
+                case 7:
+                    printf("created_datetime: %s\n",values[i]);
+                    break;
+                case 8:
+                    printf("updated_datetime: %s\n",values[i]);
+                    break;
+                case 9:
+                    printf("base_backup_directory: %s\n",values[i]);
+                    break;
+                case 10:
+                    printf("backup_directory_name: %s\n",values[i]);
+                    break;
+                case 11:
+                    printf("baseon_backup:  %s\n",values[i]);
+                    break;
+                case 12:
+                    printf("extra_lsndir:  %s\n",values[i]);
+                    break;
+                default:
+                    printf("Err\n");
+            }
+        }
+        printf("\n");
+
+}
+
+int list_backup_history(char *hisdb,PARA *para){
+    sqlite3 *db;
+    sqlite3_open(hisdb,&db);
+
     int cres = 0;
     int fres = 0;
     int pres = 0;
     int i = 0;
     my_ulonglong num_rows = 0;
     char *query = NULL;
-    
-    //获取数据库参数
-    pres = parse_database_conn_params(pdb_conn_info,dbp);
 
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
-    
-    //创建MySQL数据库连接符。
-    MYSQL *conn = NULL;
-    conn = mysql_init(NULL);
-    //连接到目标数据库
-    mysql_real_connect(conn,dbp->host,dbp->user,dbp->pass,NULL,dbp->port,dbp->socket,0);
 
-    int mysql_query_res = 0;
 
     switch(para->argclen){
         case 1:
@@ -1819,66 +1817,8 @@ int list_backup_history(DBP *dbp,PARA *para){
             if(strstr("list",para[1].content)){
                 if(strstr("history",para[2].content)){
                     if(strstr("backup",para[3].content)){
-                        snprintf(query,DFTLENGTH*2,"select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from sysadmin.t_xtra_backup_metadata");
-                        mysql_query_res = mysql_query(conn,query);
-                        if(mysql_query_res != 0){
-                            return(1);
-                        }
-                        res = mysql_store_result(conn);
-                        if(res == NULL){
-                            return(2);
-                        }
-
-                        //    cres = connection_pdb_server(dbp,res,&row,query);
-
-                        while((row = mysql_fetch_row(res)) != NULL){
-                            for(i = 0;i<mysql_num_fields(res);i++ ){
-                                switch(i){
-                                    case 0:
-                                        printf("id:  %s\n",row[i]);
-                                        break;
-                                    case 1:
-                                        printf("metadata_type: %s\n",row[i]);
-                                        break;
-                                    case 2:
-                                        printf("metadata_from_lsn: %s\n",row[i]);
-                                        break;
-                                    case 3:
-                                        printf("metadata_to_lsn: %s\n",row[i]);
-                                        break;
-                                    case 4:
-                                        printf("metadata_last_lsn: %s\n",row[i]);
-                                        break;
-                                    case 5:
-                                        printf("xtrabackup_compact: %s\n",row[i]);
-                                        break;
-                                    case 6:
-                                        printf("is_deleted: %s\n",row[i]);
-                                        break;
-                                    case 7:
-                                        printf("created_datetime: %s\n",row[i]);
-                                        break;
-                                    case 8:
-                                        printf("updated_datetime: %s\n",row[i]);
-                                        break;
-                                    case 9:
-                                        printf("base_backup_directory: %s\n",row[i]);
-                                        break;
-                                    case 10:
-                                        printf("backup_directory_name: %s\n",row[i]);
-                                        break;
-                                    case 11:
-                                        printf("baseon_backup:  %s\n",row[i]);
-                                        break;
-                                    case 12:
-                                        printf("extra_lsndir:  %s\n",row[i]);
-                                        break;
-                                    default:
-                                        printf("Err\n");
-                                }
-                            }
-                            printf("\n");
-                        }
+                        snprintf(query,DFTLENGTH*2,"select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from t_xtra_backup_metadata");
+                        sqlite3_exec(db,query,list_backup_history_callbak,NULL,NULL);
                     }
                     else{
                         print_history_help();
@@ -1902,66 +1842,8 @@ int list_backup_history(DBP *dbp,PARA *para){
                     if(strstr("backup",para[3].content)){
                         if(strstr("begin",para[4].content)){
                             if(strlen(para[5].content) !=0){
-                                snprintf(query,DFTLENGTH*2,"select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from sysadmin.t_xtra_backup_metadata where created_datetime > '%s'",para[5].content);
-                                mysql_query_res = mysql_query(conn,query);
-                                if(mysql_query_res != 0){
-                                    return(1);
-                                }
-                                res = mysql_store_result(conn);
-                                if(res == NULL){
-                                    return(2);
-                                }
-
-                                //    cres = connection_pdb_server(dbp,res,&row,query);
-
-                                while((row = mysql_fetch_row(res)) != NULL){
-                                    for(i = 0;i<mysql_num_fields(res);i++ ){
-                                        switch(i){
-                                            case 0:
-                                                printf("id:  %s\n",row[i]);
-                                                break;
-                                            case 1:
-                                                printf("metadata_type: %s\n",row[i]);
-                                                break;
-                                            case 2:
-                                                printf("metadata_from_lsn: %s\n",row[i]);
-                                                break;
-                                            case 3:
-                                                printf("metadata_to_lsn: %s\n",row[i]);
-                                                break;
-                                            case 4:
-                                                printf("metadata_last_lsn: %s\n",row[i]);
-                                                break;
-                                            case 5:
-                                                printf("xtrabackup_compact: %s\n",row[i]);
-                                                break;
-                                            case 6:
-                                                printf("is_deleted: %s\n",row[i]);
-                                                break;
-                                            case 7:
-                                                printf("created_datetime: %s\n",row[i]);
-                                                break;
-                                            case 8:
-                                                printf("updated_datetime: %s\n",row[i]);
-                                                break;
-                                            case 9:
-                                                printf("base_backup_directory: %s\n",row[i]);
-                                                break;
-                                            case 10:
-                                                printf("backup_directory_name: %s\n",row[i]);
-                                                break;
-                                            case 11:
-                                                printf("baseon_backup:  %s\n",row[i]);
-                                                break;
-                                            case 12:
-                                                printf("extra_lsndir:  %s\n",row[i]);
-                                                break;
-                                            default:
-                                                printf("Err\n");
-                                        }
-                                    }
-                                    printf("\n");
-                                }
+                                snprintf(query,DFTLENGTH*2,"select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from t_xtra_backup_metadata where created_datetime > '%s'",para[5].content);
+                                sqlite3_exec(db,query,list_backup_history_callbak,NULL,NULL);
                             }
                             else{
                                 print_history_help();
@@ -1995,66 +1877,8 @@ int list_backup_history(DBP *dbp,PARA *para){
                             if(strlen(para[5].content) !=0){
                                 if(strstr("end",para[6].content)){
                                     if(strlen(para[7].content) != 0){
-                                        snprintf(query,DFTLENGTH*2,"select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from sysadmin.t_xtra_backup_metadata where created_datetime > '%s'",para[5].content);
-                                        mysql_query_res = mysql_query(conn,query);
-                                        if(mysql_query_res != 0){
-                                            return(1);
-                                        }
-                                        res = mysql_store_result(conn);
-                                        if(res == NULL){
-                                            return(2);
-                                        }
-
-                                        //    cres = connection_pdb_server(dbp,res,&row,query);
-
-                                        while((row = mysql_fetch_row(res)) != NULL){
-                                            for(i = 0;i<mysql_num_fields(res);i++ ){
-                                                switch(i){
-                                                    case 0:
-                                                        printf("id:  %s\n",row[i]);
-                                                        break;
-                                                    case 1:
-                                                        printf("metadata_type: %s\n",row[i]);
-                                                        break;
-                                                    case 2:
-                                                        printf("metadata_from_lsn: %s\n",row[i]);
-                                                        break;
-                                                    case 3:
-                                                        printf("metadata_to_lsn: %s\n",row[i]);
-                                                        break;
-                                                    case 4:
-                                                        printf("metadata_last_lsn: %s\n",row[i]);
-                                                        break;
-                                                    case 5:
-                                                        printf("xtrabackup_compact: %s\n",row[i]);
-                                                        break;
-                                                    case 6:
-                                                        printf("is_deleted: %s\n",row[i]);
-                                                        break;
-                                                    case 7:
-                                                        printf("created_datetime: %s\n",row[i]);
-                                                        break;
-                                                    case 8:
-                                                        printf("updated_datetime: %s\n",row[i]);
-                                                        break;
-                                                    case 9:
-                                                        printf("base_backup_directory: %s\n",row[i]);
-                                                        break;
-                                                    case 10:
-                                                        printf("backup_directory_name: %s\n",row[i]);
-                                                        break;
-                                                    case 11:
-                                                        printf("baseon_backup:  %s\n",row[i]);
-                                                        break;
-                                                    case 12:
-                                                        printf("extra_lsndir:  %s\n",row[i]);
-                                                        break;
-                                                    default:
-                                                        printf("Err\n");
-                                                }
-                                            }
-                                            printf("\n");
-                                        }
+                                        snprintf(query,DFTLENGTH*2,"select id,metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,is_deleted,created_datetime,updated_datetime,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir from t_xtra_backup_metadata where created_datetime between  '%s' and '%s'",para[5].content,para[7].content);
+                                        sqlite3_exec(db,query,list_backup_history_callbak,NULL,NULL);
                                     }
                                     else{
                                         print_history_help();
@@ -2145,7 +1969,6 @@ int pdb_shell(DBP *dbp){
     memset(connsocket,0,DFTLENGTH/2);
     memset(connport,0,DFTLENGTH/4);
 
-    //read pdb conn info file.
     res = parse_database_conn_params(pdb_conn_info,dbp);
     if(res ==0){
         snprintf(connhost,DFTLENGTH/4,"-h%s",dbp->host);
@@ -2181,6 +2004,11 @@ int main(int argc,char **argv){
         print_main_help();
         exit(1); 
     };
+
+    /*
+     *创建hisdb
+     */
+    create_hisdb_objects(hisdb);
 
     /*
         初始化metadata数据
@@ -2298,7 +2126,7 @@ int main(int argc,char **argv){
         restore_database(dbp,para,metadata);
     }
     else if(strstr("list",para[1].content)){
-         list_backup_history(dbp,para);
+         list_backup_history(hisdb,para);
     }
     else if(strstr("shell",para[1].content)){
         print_shell_help();
