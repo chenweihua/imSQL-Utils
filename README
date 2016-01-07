@@ -1,5 +1,63 @@
-
 ParateraDB-Utils
 
 ---------------------------------
-保存一些ParateraDB的增强工具。
+    ParateraDB-Utils是ParateraDB数据库软件的增强工具包。此软件包的最终目标是为DBA提供一些便利的管理工具。
+    包含如下内容：
+1.第一版本的数据库维护工具
+/usr/bin/CompressDbxBak  数据库备份压缩脚本
+/usr/bin/DatabaseBackup 数据库备份脚本
+/usr/bin/NfsMount NFS挂载脚本
+/usr/bin/RemoveDbxBak 定时删除数据库备份脚本
+/usr/bin/SyncDBxBak 同步数据库备份文件的脚本
+
+2.第二版本的数据库维护工具
+/usr/bin/pdb 
+pdb的使用方法如下所示：
+Usage:
+ 	pdb {backup|restore|list|shell|help}
+
+Sample:
+ 	pdb backup {all|db} {NULL|dbname} {full|incremental} {offline|online} [compress] {to 'path'} 备份数据库。并提供压缩、加密、完整和增量备份的功能。
+ 	pdb restore {backup_id} [from 'path'] [into 'path'] 恢复数据库。
+ 	pdb list history [backup|restore|archive_logs|event_schedule] [begin 'timestamp'] [end 'tiemstamp'] [detail] 列出一系列操作的历史信息。现阶段只支持查看备份操作的信息
+ 	pdb shell  进入到MySQL的shell环境。
+ 	
+ 	
+3.Percona 增强工具集
+/usr/bin/post.sh
+/usr/bin/pt-align
+/usr/bin/pt-archiver
+/usr/bin/pt-config-diff
+/usr/bin/pt-deadlock
+/usr/bin/pt-diskstats
+/usr/bin/pt-duplicate-key-checker
+/usr/bin/pt-fifo-split
+/usr/bin/pt-find
+/usr/bin/pt-fingerprint
+/usr/bin/pt-fk-error-logger
+/usr/bin/pt-heartbeatd
+/usr/bin/pt-index-usage
+/usr/bin/pt-ioprofile
+/usr/bin/pt-kill
+/usr/bin/pt-mext
+/usr/bin/pt-mysql-summary
+/usr/bin/pt-online-schema-change
+/usr/bin/pt-pmp
+/usr/bin/pt-query-digest
+/usr/bin/pt-show-grants
+/usr/bin/pt-sift
+/usr/bin/pt-slave-delay
+/usr/bin/pt-slave-find
+/usr/bin/pt-slave-restart
+/usr/bin/pt-stalk
+/usr/bin/pt-summary
+/usr/bin/pt-table-checksum
+/usr/bin/pt-table-sync
+/usr/bin/pt-table-usage
+/usr/bin/pt-upgrade
+/usr/bin/pt-variable-advisor
+/usr/bin/pt-visual-explain
+/usr/bin/read_metadata
+/usr/bin/registe_metadata
+
+    
