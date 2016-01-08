@@ -1,5 +1,5 @@
 Name:       ParateraDB-Utils	
-Version:    2.0.2
+Version:    2.1.0
 Release:	1%{?dist}
 Summary:	ParateraDB Utils Tools.
 
@@ -42,9 +42,16 @@ make %{?_smp_mflags}
 RBR=$RPM_BUILD_ROOT
 MBD=$RPM_BUILD_DIR/%{name}
 
-install -D -m 0755 $MBD/read_metadata $RBR/%{_bindir}/read_metadata
 install -D -m 0755 $MBD/pdb $RBR/%{_bindir}/pdb
-install -D -m 0755 $MBD/registe_metadata $RBR/%{_bindir}/registe_metadata
+install -D -m 0644 $MBD/libhelp_message.so $RBR/%{_libdir}/libhelp_message.so
+install -D -m 0644 $MBD/libpdb_backup.so $RBR/%{_libdir}/libpdb_backup.so 
+install -D -m 0644 $MBD/libpdb_restore.so $RBR/%{_libdir}/libpdb_restore.so 
+install -D -m 0644 $MBD/libpdb_history.so $RBR/%{_libdir}/libpdb_history.so 
+install -D -m 0644 $MBD/libpdb_shell.so $RBR/%{_libdir}/libpdb_shell.so 
+install -D -m 0644 $MBD/libread_config.so $RBR/%{_libdir}/libread_config.so 
+install -D -m 0644 $MBD/libsqlite_ops.so $RBR/%{_libdir}/libsqlite_ops.so 
+install -D -m 0644 $MBD/libxtrabackup_checkpoint.so $RBR/%{_libdir}/libxtrabackup_checkpoint.so 
+
 install -D -m 0755 $MBD/support-scripts/DatabaseBackup.sh $RBR/%{_bindir}/DatabaseBackup
 install -D -m 0755 $MBD/support-scripts/CompressDbxBak.sh $RBR/%{_bindir}/CompressDbxBak
 install -D -m 0755 $MBD/support-scripts/NfsMount.sh $RBR/%{_bindir}/NfsMount
@@ -96,9 +103,16 @@ cp -r $MBD/doc/man $RBR/%{_datadir}/
 %{_bindir}/NfsMount
 %{_bindir}/RemoveDbxBak
 %{_bindir}/SyncDBxBak
-%{_bindir}/read_metadata
 %{_bindir}/pdb
-%{_bindir}/registe_metadata
+%{_libdir}/libpdb_backup.so 
+%{_libdir}/libpdb_restore.so 
+%{_libdir}/libpdb_history.so 
+%{_libdir}/libpdb_shell.so 
+%{_libdir}/libhelp_message.so 
+%{_libdir}/libread_config.so 
+%{_libdir}/libsqlite_ops.so 
+%{_libdir}/libxtrabackup_checkpoint.so 
+
 %{_bindir}/pt-align
 %{_bindir}/pt-archiver
 %{_bindir}/pt-config-diff
