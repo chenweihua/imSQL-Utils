@@ -1,6 +1,28 @@
-all:
-	gcc -g -o registe_metadata src/registe_metadata.c src/metadata.h `mysql_config --cflags --libs`	
-	gcc -g -o read_metadata src/read_metadata.c src/metadata.h `mysql_config --cflags --libs`	
-	gcc -lsqlite3 -g -o pdb	src/pdb.c src/pdb.h  `mysql_config --cflags --libs`
+pdb: libhelp_message.so libread_config.so libsqlite_ops.so libxtrabackup_checkpoint.so libpdb_backup.so libpdb_restore.so libpdb_history.so libpdb_shell.so 
+	gcc -L. -lread_config -lsqlite_ops -lpdb_backup -lpdb_restore -lpdb_history -lpdb_shell -lxtrabackup_checkpoint -lhelp_message -o pdb ./src/pdb.c
+
+libpdb_shell.so: 
+	gcc -fpic -shared -L. -lread_config -lsqlite_ops -lxtrabackup_checkpoint -o libpdb_shell.so ./src/pdb_shell.c
+libpdb_history.so: 
+	gcc -fpic -shared -L. -lread_config -lsqlite_ops -lxtrabackup_checkpoint -o libpdb_history.so ./src/pdb_history.c
+
+libpdb_restore.so: 
+	gcc -fpic -shared -L. -lread_config -lsqlite_ops -lxtrabackup_checkpoint -o libpdb_restore.so ./src/pdb_restore.c
+
+libpdb_backup.so: 
+	gcc -fpic -shared -L. -lsqlite_ops -lxtrabackup_checkpoint -o libpdb_backup.so ./src/pdb_backup.c
+
+libxtrabackup_checkpoint.so: 
+	gcc -fpic -shared -o libxtrabackup_checkpoint.so ./src/xtrabackup_checkpoint.c
+
+libsqlite_ops.so: 
+	gcc -fpic -shared -L. -lhelp_message -lsqlite3 -o libsqlite_ops.so ./src/sqlite_ops.c
+
+libread_config.so: 
+	gcc -fpic -shared -o libread_config.so ./src/read_config.c
+
+libhelp_message.so: 
+	gcc -fpic -shared -o libhelp_message.so ./src/help_message.c
+
 clean:
-	rm -f registe_metadata read_metadata pdb
+	rm -f pdb *.so
