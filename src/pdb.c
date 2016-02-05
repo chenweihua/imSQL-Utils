@@ -98,7 +98,7 @@ int main(int argc,char **argv){
     innobak->throttle = 0;
     innobak->compress = 0;
     innobak->compress_threads =0;
-    
+
     /*
         初始化数据库连接信息变量 
     */

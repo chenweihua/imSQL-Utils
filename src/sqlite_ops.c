@@ -43,9 +43,11 @@ int create_hisdb_objects(char *hisdb)
     query = (char *)malloc(sizeof(char)*DFTLENGTH);
     memset(query,0,sizeof(char)*DFTLENGTH);
 
+    //查找sqlite中的管理视图，如果这个表存在就返回1
     strncpy(query,"SELECT COUNT(*) FROM sqlite_master where type='table' and name='t_xtra_backup_metadata'",sizeof(char)*DFTLENGTH-1);
     sqlite3_exec(db,query,chk_table_exists_callback,isTableExist,NULL);
 
+    //如果表不存在就创建表
     if(strcmp(isTableExist,"0") == 0 ){
         memset(query,0,sizeof(char)*DFTLENGTH);
         strncpy(query," \

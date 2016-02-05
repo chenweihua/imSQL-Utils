@@ -7,12 +7,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-/*
-#include <mysql/my_global.h>
-#include <mysql/mysql.h>
-*/
-
-
 extern char **environ;
 
 //定义本程序内标准字符长度为1024.

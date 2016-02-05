@@ -80,6 +80,8 @@ typedef struct innobak{
 }INNOBAK;
 
  
+int initialize_metadata(META *);
+int initialize_innobackupex(INNOBAK *);
 void xtrabackup_print_metadata(META*,char *,size_t);
 int create_full_backup_directory_and_metadata(INNOBAK*,META *);
 int read_xtrabackup_checkpoint_file(char *,META *);
