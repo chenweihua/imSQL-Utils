@@ -10,8 +10,8 @@ int main(int argc,char **argv){
 
     /*
         判断参数个数是否复合要求
+        如果参数个数小于2就表示不符合要求，打印出提示信息。
     */
-    DBP *dbp = NULL;
     if(argc <2){
         print_main_help();
         exit(1); 
@@ -102,6 +102,7 @@ int main(int argc,char **argv){
     /*
         初始化数据库连接信息变量 
     */
+    DBP *dbp = NULL;
     dbp = (DBP *)malloc(sizeof(DBP));
     dbp->host = (char *)malloc(sizeof(char)*(DFTLENGTH/8));
     dbp->user = (char *)malloc(sizeof(char)*(DFTLENGTH/8));
