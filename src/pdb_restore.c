@@ -1,15 +1,12 @@
 #include "pdb_restore.h"
 
 /***********************************************************************
- * restore database operation.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
+ * 恢复数据库
+ * 成功返回0，否则返回非0
+ * 作者: Tian, Lei [tianlei@paratera.com]
+ * 时间: 20151019PM1318
  */
 int restore_database(DBP *dbp,PARA *para,META *metadata){
-
-    //MYSQL_RES *res = NULL;
-    //MYSQL_ROW row;
 
     char * backup_is_exists = NULL;
     backup_is_exists = (char *)malloc(sizeof(char)*DFTLENGTH/2);
@@ -48,22 +45,28 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
             print_restore_help();
             break;
         case 4:
+            //判断数据库备份是否存在
             backup_is_exists = database_backup_is_exists(hisdb,para);
             if(strcmp(backup_is_exists,"1") == 0){
+                //如果存在进行下面的恢复操作。
                 if(strstr("into",para[3].content)){
                     if(strlen(para[4].content) != 0){
                         //pdb restore 100 into /Database
+                        //读取备份备份的信息
                         read_innobackup_content_from_db(hisdb,para,metadata);
                         if(strstr(metadata->metadata_type,"full-backuped")){
+                            //如果是完整备份就解密，解压缩和恢复
                             printf("full-backuped\n");
                             snprintf(restore_ops,DFTLENGTH*2-1,"%s %s %s %s %s %s/%s | %s %s %s %s","/usr/bin/xbcrypt","-d","-a AES256","-f /etc/sysconfig/pdb/secure.key","-i",metadata->base_backup_directory,metadata->backup_directory_name,"/usr/bin/xbstream","-x","-C",para[4].content);
                             restore_ops_res = system(restore_ops);
                             if(restore_ops_res == 0){
                                 if(metadata->is_compressed = 1){
+                                    //解压缩
                                     printf("Decompress Tablespaces\n");
                                     snprintf(decompress_ops,DFTLENGTH*2-1,"%s %s","/usr/bin/innobackupex --decompress",para[4].content);
                                     system(decompress_ops);
                                 }
+                                //应用日志
                                 snprintf(restore_applog,DFTLENGTH*2-1,"%s %s %s","/usr/bin/innobackupex","--apply-log --redo-only",para[4].content);
                                 applog_ops_res = system(restore_applog);
                                 if(applog_ops_res == 0){
@@ -77,6 +80,7 @@ int restore_database(DBP *dbp,PARA *para,META *metadata){
                                 printf("Restore Failure\n");
                             }
                         }
+                        //如果是增量备份，先恢复完整备份。再在完整备份的前提下恢复增量备份。
                         else if(strstr(metadata->metadata_type,"incremental")){
                             printf("incremental\n");
                             //restore full backup .
