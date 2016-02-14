@@ -1,10 +1,10 @@
 #include "read_config.h"
 
 /***********************************************************************
- *parse database connection params informations,save informations into DBP struct.
- *@return TRUE on success,FALSE on failure.
- *Author:  Tian, Lei [tianlei@paratera.com]
- *Date:    20151019PM1318
+ * 读取数据库连接信息配置文件中的内容
+ * 成功返回0，否则返回1 
+ * 作者:  Tian, Lei [tianlei@paratera.com]
+ * 时间:    20151019PM1318
  ************************************************************************/
 int parse_database_conn_params(char *filename,DBP *dbp){
     FILE *fp = NULL;
