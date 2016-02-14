@@ -149,6 +149,10 @@ int main(int argc,char **argv){
     else if(strstr("help",para[1].content)){
         print_main_help();
     }
+    else if(strstr("version",para[1].content)){
+        printf("Version: 2.1.1\n");
+        exit(0);
+    }
     else{
         printf("para[0].content = %s\n",para[0].content);
     }
