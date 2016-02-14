@@ -177,19 +177,21 @@ xtrabackup_read_metadata_from_db(char *hisdb,META *metadata)
     query = (char *)malloc(sizeof(char)*DFTLENGTH*2);
     memset(query,0,DFTLENGTH*2);
 
+    //读取备份类型是full-backuped，未删除的最新的一个完整备份的信息
     snprintf(query,DFTLENGTH*2,"%s","SELECT metadata_type,metadata_from_lsn,metadata_to_lsn,metadata_last_lsn,xtrabackup_compact,base_backup_directory,backup_directory_name,baseon_backup,extra_lsndir FROM t_xtra_backup_metadata WHERE metadata_type='full-backuped' and is_deleted = 0 ORDER BY id DESC LIMIT 1");
 
+    //执行操作
     sqlite3_exec(db,query,xtrabackup_read_metadata_from_db_callback,metadata,NULL);
 
     return(0);
 }
 
 /***********************************************************************
- *Read backup_directory_name from MySQL Database.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
-*/
+ *从hisdb数据库中读取备份文件的名称。
+ *成功返回0，否则返回1
+ *作者: Tian, Lei [tianlei@paratera.com]
+ *时间: 20151019PM1318
+***********************************************************************/
 int
 read_full_backup_name_from_db(char *hisdb,META *metadata,char *buf)
 {
@@ -202,11 +204,11 @@ read_full_backup_name_from_db(char *hisdb,META *metadata,char *buf)
 }
 
 /********************n***************************************************
- * database backup is exists?
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
-*/
+ * 判断指定的数据库备份是否存在
+ * 成功返回0，否则返回1
+ * 作者: Tian, Lei [tianlei@paratera.com]
+ * 时间: 20151019PM1318
+***********************************************************************/
 
 int 
 database_backup_is_exists_callback(void *arg,int nr,char **values,char **names)
@@ -242,11 +244,11 @@ database_backup_is_exists(char *hisdb,PARA *para){
 }
 
 /********************n***************************************************
- * database backup is exists?
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
-*/
+ * 从hisdb数据库中读取备份操作的信息
+ * 成功返回0，否则返回1
+ * 作者: Tian, Lei [tianlei@paratera.com]
+ * 时间:20151019PM1318
+*************************************************************************/
 int 
 read_innobackup_content_from_db_callback(void *arg,int nr,char **values,char **names)
 {
@@ -327,6 +329,7 @@ read_innobackup_content_from_db(char *hisdb,PARA *para,META *metadata){
     sqlite3_open(hisdb,&db);
     
     switch(para->argclen){
+        //判断主程序的参数个数，不符合要求就打印帮助信息
         case 2:
             print_history_help();
             break;
@@ -368,25 +371,13 @@ read_innobackup_content_from_db(char *hisdb,PARA *para,META *metadata){
     return(0);
 }
 
-/********************n***************************************************
- * database list
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
-*/
-int get_database_list(void){
-    return(0);
-}
-
-
-
 /***********************************************************************
- * some database operation history.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
-*/
-int operate_database_history(PARA *para){
+ * 获取数据库列表
+ * 成功返回0，否则返回1
+ * 作者: Tian, Lei [tianlei@paratera.com]
+ * 时间: 20151019PM1318
+ ************************************************************************/
+int get_database_list(void){
     return(0);
 }
 
