@@ -2,10 +2,10 @@
 #include "sqlite3.h"
 
 /***********************************************************************
- * some database operation history.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
+ * 列出所有备份信息
+ * 正常返回0，否则返回非0
+ * 作者: Tian, Lei [tianlei@paratera.com]
+ * 时间: 20151019PM1318
  */
 static int list_backup_history_callbak(void *arg,int nr,char **values,char **names)
 {
@@ -182,32 +182,30 @@ int list_backup_history(char *hisdb,PARA *para){
 }
 
 /***********************************************************************
- * some database operation history.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
+ * 列出所有恢复操作的信息
+ * 成功返回0，否则返回非0
+ * 作者: Tian, Lei [tianlei@paratera.com]
+ * 时间:20151019PM1318
 */
 int list_restore_history(){
 }
 
 
 /***********************************************************************
- * some database operation history.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
+ * 返回归档日志的操作
+ * 成功返回0，否则返回非0
+ * 作者: Tian, Lei [tianlei@paratera.com]
+ * 时间: 20151019PM1318
 */
 int list_archlog_history(){
 }
 
 
 /***********************************************************************
- * some database operation history.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
+ * 列出定时任务的操作信息
+ * 成功返回0，否则返回非0
+ * 作者: Tian, Lei [tianlei@paratera.com]
+ * 时间:20151019PM1318
 */
 int list_event_schedule_history(){
 }
-
-

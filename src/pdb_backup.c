@@ -1,33 +1,28 @@
 #include "pdb_backup.h"
 
-/********************n***************************************************
- * database is exists?
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
-*/
+/************************************************************************
+ * 判断被备份的数据库是否存在,这个函数需要完善
+ * 存在返回1，否则返回0
+ * 作者: Tian, Lei [tianlei@paratera.com]
+ * 时间: 20151019PM1318
+ ***********************************************************************/
 int database_is_exists(PARA *para){
     return(1);
 }
 
-
-
-/********************n***************************************************
- * backup database operation.
- *@return TRUE on success,FALSE on failure.
- * Author: Tian, Lei [tianlei@paratera.com]
- * Date:20151019PM1318
-*/
+/************************************************************************
+ * 备份数据库
+ * 成功返回0，否则返回非0
+ * 作者: Tian, Lei [tianlei@paratera.com]
+ * 时间:20151019PM1318
+ **********************************************************************/
 int backup_database(PARA *para,DBP *dbp,INNOBAK *innobak,META *meta){
+    //定义操作时间
     struct tm *ptr;
     time_t ct;
     char *timestamp_buf = NULL;
 
-    //MYSQL_RES *res = NULL;
-    //MYSQL_ROW row;
     unsigned int i,cres,pres;
-
-
 
     char *query = NULL;                 //缓冲查询语句
     char *iconn = NULL;                 //保存连接数据库的详细信息
