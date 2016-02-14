@@ -115,6 +115,7 @@ int main(int argc,char **argv){
     memset(dbp->socket,0,DFTLENGTH/4);
     dbp->port = 0;
 
+    //初始化系统参数结构体
     para = (PARA *)malloc(sizeof(PARA)*argc);
     memset(para,0,sizeof(PARA)*argc);
 
