@@ -150,7 +150,7 @@ int main(int argc,char **argv){
         print_main_help();
     }
     else if(strstr("version",para[1].content)){
-        printf("Version: 2.1.2\n");
+        printf("Version: 2.1.4\n");
         exit(0);
     }
     else{
