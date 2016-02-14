@@ -1,7 +1,21 @@
 #!/bin/bash
 
+#定义保存配置文件的基础目录
 BASEPATH='/etc/sysconfig/pdb'
 
+function adaptive_cpus_number (){
+    PCPU=`cat /proc/cpuinfo |grep "physical id"|sort|uniq|wc -l`
+    #Get current machine physical cpu number.
+    sed -i "s/parallel = 4/parallel = $(( $PCPU/2 ))/g" $BASEPATH/innobackupex
+    sed -i "s/throttle = 4/throttle = $(( $PCPU/2 ))/g" $BASEPATH/innobackupex
+}
+
+function adaptive_hostname (){
+    MNAME=`hostname`
+    sed -i "s/hostname = developer-rhel6node1/hostname = $MNAME/g" $BASEPATH/innobackupex
+}
+
+function initialize_files (){
 if [ -d $BASEPATH ];then
     /bin/cat >$BASEPATH/innobackupex <<EOF
 innobak_bin = /usr/bin/innobackupex
@@ -46,5 +60,22 @@ port = 3306
 EOF
 
 fi
-echo -n `openssl rand -base64 24` >$BASEPATH/secure.key
+}
 
+function initialize_secure_file (){
+    #如果加密文件不存在则创建
+    if [ -f $BASEPATH/secure.key ];then
+        echo "Secure.key exists,skip create it."
+    else 
+        echo -n `openssl rand -base64 24` >$BASEPATH/secure.key
+    fi
+}
+
+function main (){
+    initialize_files
+    initialize_secure_file
+    adaptive_cpus_number
+    adaptive_hostname
+}
+
+main
