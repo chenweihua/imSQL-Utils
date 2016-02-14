@@ -141,7 +141,7 @@ xtrabackup_read_metadata_from_db_callback(void *arg,int nr,char **values,char **
                 snprintf(pdata->base_backup_directory,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
                 break;
             case 6:
-                snprintf(pdata->base_backup_directory,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
+                snprintf(pdata->backup_directory_name,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
                 break;
             case 7:
                 snprintf(pdata->baseon_backup,DFTLENGTH/8-1,"%s",values[i] !=NULL?values[i]:"");
