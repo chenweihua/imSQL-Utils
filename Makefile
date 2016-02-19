@@ -1,5 +1,8 @@
-pdb: libhelp_message.so libread_config.so libsqlite_ops.so libxtrabackup_checkpoint.so libpdb_backup.so libpdb_restore.so libpdb_history.so libpdb_shell.so 
-	gcc -g -L. -lread_config -lsqlite_ops -lpdb_backup -lpdb_restore -lpdb_history -lpdb_shell -lxtrabackup_checkpoint -lhelp_message -o pdb ./src/pdb.c
+pdb: libhelp_message.so libread_config.so libsqlite_ops.so libxtrabackup_checkpoint.so libpdb_backup.so libpdb_restore.so libpdb_history.so libpdb_shell.so libpdb_catch.so
+	gcc -g -L. -lread_config -lsqlite_ops -lpdb_backup -lpdb_restore -lpdb_history -lpdb_shell -lxtrabackup_checkpoint -lhelp_message -lpdb_catch -o pdb ./src/pdb.c `mysql_config --cflags --libs`
+
+libpdb_catch.so:
+	gcc -g -fpic -shared -L. -lread_config -o libpdb_catch.so ./src/pdb_catch.c `mysql_config --cflags --libs`
 
 libpdb_shell.so: 
 	gcc -g -fpic -shared -L. -lread_config -lsqlite_ops -lxtrabackup_checkpoint -o libpdb_shell.so ./src/pdb_shell.c
