@@ -14,6 +14,7 @@ void print_main_help(void)
 \tpdb backup {all|db} {NULL|dbname} {full|incremental} {offline|online} [compress] {to 'path'} \n \
 \tpdb restore {backup_id} [from 'path'] [into 'path'] \n \
 \tpdb list history [backup|restore|archive_logs|event_schedule] [begin 'timestamp'] [end 'tiemstamp'] [detail] \n \
+\tpdb catch {deadlock|slowquery} [enable|disable|to '/path'] \n \
 \tpdb shell \n \
 ";
     printf("%s",help_msgs);
@@ -24,7 +25,7 @@ void print_main_help(void)
  *返回值：本函数无返回值.
  *作者:  Tian, Lei [tianlei@paratera.com]
  *时间:    20151019PM1318
-*/
+***********************************************************************/
 void print_backup_help(void)
 {
     char *help_msgs = "Usage: \n \
@@ -50,7 +51,7 @@ void print_backup_help(void)
  *返回值：本函数无返回值.
  *作者:  Tian, Lei [tianlei@paratera.com]
  *时间:    20151019PM1318
-*/
+***********************************************************************/
 void print_restore_help(void)
 {
     char *help_msgs = "Usage: \
@@ -75,7 +76,7 @@ void print_restore_help(void)
  *返回值：本函数无返回值.
  *作者:  Tian, Lei [tianlei@paratera.com]
  *时间:    20151019PM1318
-*/
+***********************************************************************/
 void print_history_help(void)
 {
     char *help_msgs = "Usage: \
@@ -94,7 +95,7 @@ void print_history_help(void)
  *返回值：本函数无返回值.
  *作者:  Tian, Lei [tianlei@paratera.com]
  *时间:    20151019PM1318
-*/
+************************************************************************/
 void print_shell_help(void)
 {
     char *help_msgs = "Usage: \
@@ -103,3 +104,21 @@ void print_shell_help(void)
 }
 
 
+/**********************************************************************
+ * 打印出pdb catch命令的帮助信息。
+ * 返回值：本函数无返回值。
+ * 作者： Tian, Lei [tianlei@paratera.com]
+ * 时间： 20160222AM1004
+ * ********************************************************************/
+void print_catch_help(void)
+{
+    char *help_msg = "Usage: \
+\tstep 1: pdb catch deadlock to '/tmp/deadlock' \n \
+\tstep 2: pdb catch deadlock enable \n \
+\tstep 3: pdb catch deadlock disable \n \
+\tstep 4: pdb catch slowquery to '/tmp/slowquery' \n \
+\tstep 5: pdb catch slowquery enable \n \
+\tstep 6: pdb catch slowquery disable \n \
+";
+    printf("%s",help_msg);
+}

@@ -143,8 +143,10 @@ int main(int argc,char **argv){
          list_backup_history(hisdb,para);
     }
     else if(strstr("shell",para[1].content)){
-        print_shell_help();
         pdb_shell(dbp);
+    }
+    else if(strstr("catch",para[1].content)){
+        print_catch_help();
     }
     else if(strstr("help",para[1].content)){
         print_main_help();
