@@ -146,7 +146,8 @@ int main(int argc,char **argv){
         pdb_shell(dbp);
     }
     else if(strstr("catch",para[1].content)){
-        print_catch_help();
+        parse_database_conn_params(pdb_conn_info,dbp);
+        catch_function(dbp,para);
     }
     else if(strstr("help",para[1].content)){
         print_main_help();
