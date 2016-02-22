@@ -147,6 +147,7 @@ int main(int argc,char **argv){
     }
     else if(strstr("catch",para[1].content)){
         parse_database_conn_params(pdb_conn_info,dbp);
+
         catch_function(dbp,para);
     }
     else if(strstr("help",para[1].content)){
