@@ -93,7 +93,7 @@ catch_function(DBP *dbp,PARA *para){
                 if( strcmp("to",para[3].content) == 0 ){
                     if( strlen(para[4].content) >0 ) {
                         //开启死锁监控功能
-                        sprintf(query_buf,"%s %s%s","set global deadlock_log_path = '",para[4].content,"'");
+                        sprintf(query_buf,"%s %s/SlowQuery.log%s","set global slow_query_log_file = '",para[4].content,"'");
                         mysql_query_ret = mysql_query(conn,query_buf);
                         return (mysql_query_ret);
                     }
