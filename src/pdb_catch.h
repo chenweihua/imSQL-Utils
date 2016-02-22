@@ -1,3 +1,3 @@
-#include "read_config.h"
+#include "pdb.h"
 
 int catch_function(DBP *,PARA *);
