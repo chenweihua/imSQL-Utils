@@ -71,9 +71,6 @@ catch_function(DBP *dbp,PARA *para){
             }
             break;
         case 4:
-            print_catch_help();
-            break;
-        case 5:
             //pdb catch deadlock|slowquery enable|disable
             if( strcmp("deadlock",para[2].content) == 0 ){
                 if( strcmp("to",para[3].content) == 0 ){
