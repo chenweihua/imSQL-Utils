@@ -113,12 +113,14 @@ void print_shell_help(void)
 void print_catch_help(void)
 {
     char *help_msg = "Usage: \
+\tOpen Deadlock Monitor:\n \
 \tstep 1: pdb catch deadlock to '/tmp/deadlock' \n \
 \tstep 2: pdb catch deadlock enable \n \
 \tstep 3: pdb catch deadlock disable \n \
-\tstep 4: pdb catch slowquery to '/tmp/slowquery' \n \
-\tstep 5: pdb catch slowquery enable \n \
-\tstep 6: pdb catch slowquery disable \n \
+\tOpen SlowQuery Monitor:\n \
+\tstep 1: pdb catch slowquery to '/tmp/slowquery' \n \
+\tstep 2: pdb catch slowquery enable \n \
+\tstep 3: pdb catch slowquery disable \n \
 ";
     printf("%s",help_msg);
 }
