@@ -1,8 +1,5 @@
 #include "pdb_catch.h"
 
-//读取mysql头文件
-#include <my_global.h>
-#include <mysql.h>
 
 
 
@@ -28,7 +25,7 @@ catch_function(DBP *dbp,PARA *para){
 
     //连接到MySQL
     conn = mysql_init(NULL);
-    mysql_read_connect(conn,dbp->host,dbp->user,dbp->pass,NULL,dbp->port,dbp->socket,0);
+    mysql_real_connect(conn,dbp->host,dbp->user,dbp->pass,NULL,dbp->port,dbp->socket,0);
 
     switch(para->argclen){
         case 2:
