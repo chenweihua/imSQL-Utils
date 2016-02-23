@@ -1,5 +1,5 @@
 Name:       ParateraDB-Utils	
-Version:    2.1.4
+Version:    2.1.6
 Release:	1%{?dist}
 Summary:	ParateraDB Utils Tools.
 
@@ -51,6 +51,8 @@ install -D -m 0644 $MBD/libpdb_shell.so $RBR/%{_libdir}/libpdb_shell.so
 install -D -m 0644 $MBD/libread_config.so $RBR/%{_libdir}/libread_config.so 
 install -D -m 0644 $MBD/libsqlite_ops.so $RBR/%{_libdir}/libsqlite_ops.so 
 install -D -m 0644 $MBD/libxtrabackup_checkpoint.so $RBR/%{_libdir}/libxtrabackup_checkpoint.so 
+install -D -m 0644 $MBD/libpdb_catch.so $RBR/%{_libdir}/libpdb_catch.so 
+
 
 install -D -m 0755 $MBD/support-scripts/DatabaseBackup.sh $RBR/%{_bindir}/DatabaseBackup
 install -D -m 0755 $MBD/support-scripts/CompressDbxBak.sh $RBR/%{_bindir}/CompressDbxBak
@@ -105,6 +107,7 @@ cp -r $MBD/doc/man $RBR/%{_datadir}/
 %{_bindir}/SyncDBxBak
 %{_bindir}/pdb
 %{_libdir}/libpdb_backup.so 
+%{_libdir}/libpdb_catch.so 
 %{_libdir}/libpdb_restore.so 
 %{_libdir}/libpdb_history.so 
 %{_libdir}/libpdb_shell.so 

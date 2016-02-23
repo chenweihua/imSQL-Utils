@@ -11,11 +11,19 @@
  * **********************************************************/
 int
 catch_function(DBP *dbp,PARA *para){
+    //定义返回值
+    int catch_ret = 0;
 
     //定义字符缓冲池
     char *query_buf = NULL;
     query_buf = (char *)malloc(sizeof(char)*DFTLENGTH);
-    memset(query_buf,0,DFTLENGTH);
+    if(query_buf == NULL){
+        perror("malloc()");
+        return(1);
+    }
+    else{
+        memset(query_buf,0,DFTLENGTH);
+    }
 
     //MySQL连接符
     MYSQL *conn = NULL;
@@ -30,6 +38,7 @@ catch_function(DBP *dbp,PARA *para){
     switch(para->argclen){
         case 2:
             print_catch_help();
+            return(1);
             break;
         case 3:
             //pdb catch deadlock|slowquery enable|disable
@@ -37,37 +46,68 @@ catch_function(DBP *dbp,PARA *para){
                 if( strcmp("enable",para[3].content) == 0 ){
                     //开启死锁监控功能
                     mysql_query_ret = mysql_query(conn,"set global innodb_print_all_deadlocks = ON");
-                    return(mysql_query_ret);
+                    if(mysql_query_ret == 0){
+                        printf("set global innodb_print_all_deadlocks = ON . Success!\n");
+                        return(mysql_query_ret);
+                    }
+                    else{
+                        printf("set global innodb_print_all_deadlocks = ON . Failure!\n");
+                        return(mysql_query_ret);
+                    };
                 }
                 else if( strcmp("disable",para[3].content) == 0 ){
                     //关闭死锁监控功能
                     mysql_query_ret = mysql_query(conn,"set global innodb_print_all_deadlocks = OFF");
-                    return(mysql_query_ret);
+                    if(mysql_query_ret == 0){
+                        printf("set global innodb_print_all_deadlocks = OFF . Success!\n");
+                        return(mysql_query_ret);
+                    }
+                    else{
+                        printf("set global innodb_print_all_deadlocks = OFF . Failure!\n");
+                        return(mysql_query_ret);
+                    }
                 }
                 else{
                     //如果第三个参数不是enable,也不是disable，就打印帮助信息。
                     print_catch_help();
+                    return(1);
                 }
             }
             else if(strcmp("slowquery",para[2].content) == 0 ){
                 if( strcmp("enable",para[3].content) == 0 ){
                     //开启慢查询监控功能
                     mysql_query_ret = mysql_query(conn,"set global slow_query_log = ON");
-                    return(mysql_query_ret);
+                    if(mysql_query_ret ==0 ){
+                        printf("set global slow_query_log = ON, Success\n");
+                        return(mysql_query_ret);
+                    }
+                    else{
+                        printf("set global slow_query_log = ON, Failure\n");
+                        return(mysql_query_ret);
+                    }
                 }
                 else if( strcmp("disable",para[3].content) == 0 ){
                     //关闭慢查询监控功能
                     mysql_query_ret = mysql_query(conn,"set global slow_query_log = OFF");
-                    return(mysql_query_ret);
+                    if(mysql_query_ret == 0){
+                        printf("set global slow_query_log = OFF,Success\n");
+                        return(mysql_query_ret);
+                    }
+                    else{
+                        printf("set global slow_query_log = OFF,Failure\n");
+                        return(mysql_query_ret);
+                    }
                 }
                 else{
                     //如果第三个参数不是enable,也不是disable，就打印帮助信息。
                     print_catch_help();
+                    return(1);
                 }
             }
             else{
                 //如果第二个参数既不是deadlock也不是slowquery，就打印帮助信息
                 print_catch_help();
+                return(1);
             }
             break;
         case 4:
@@ -78,15 +118,24 @@ catch_function(DBP *dbp,PARA *para){
                         //开启死锁监控功能
                         sprintf(query_buf,"%s%s%s","set global deadlock_log_path = '",para[4].content,"'");
                         mysql_query_ret = mysql_query(conn,query_buf);
-                        return (mysql_query_ret);
+                        if(mysql_query_ret == 0){
+                            printf("%s %s,%s\n","set global deadlock_log_path=",para[4].content,"Success");
+                            return (mysql_query_ret);
+                        }
+                        else{
+                            printf("%s %s,%s\n","set global deadlock_log_path=",para[4].content,"Failure");
+                            return (mysql_query_ret);
+                        }
                     }
                     else{
                         print_catch_help();
+                        return(1);
                     }
                 }
                 else{
                     //如果第三个参数不是enable,也不是disable，就打印帮助信息。
                     print_catch_help();
+                    return(1);
                 }
             }
             else if(strcmp("slowquery",para[2].content) == 0 ){
@@ -95,7 +144,14 @@ catch_function(DBP *dbp,PARA *para){
                         //开启死锁监控功能
                         sprintf(query_buf,"%s%s/SlowQuery.log%s","set global slow_query_log_file = '",para[4].content,"'");
                         mysql_query_ret = mysql_query(conn,query_buf);
-                        return (mysql_query_ret);
+                        if(mysql_query_ret == 0){
+                            printf("%s%s,%s\n","set global slow_query_log_file =",para[4].content,"Success");
+                            return (mysql_query_ret);
+                        }
+                        else{
+                            printf("%s%s,%s\n","set global slow_query_log_file =",para[4].content,"Failure");
+                            return (mysql_query_ret);
+                        }
                     }
                     else{
                         print_catch_help();
