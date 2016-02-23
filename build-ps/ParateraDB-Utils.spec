@@ -1,5 +1,5 @@
 Name:       ParateraDB-Utils	
-Version:    2.1.7
+Version:    2.1.8
 Release:	1%{?dist}
 Summary:	ParateraDB Utils Tools.
 
