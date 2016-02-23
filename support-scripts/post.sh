@@ -15,9 +15,10 @@ function adaptive_hostname (){
     sed -i "s/hostname = developer-rhel6node1/hostname = $MNAME/g" $BASEPATH/innobackupex
 }
 
-function initialize_files (){
-if [ -d $BASEPATH ];then
-    /bin/cat >$BASEPATH/innobackupex <<EOF
+function initialize_innobak_files (){
+    if [ -d $BASEPATH ];then
+        if [ ! -f $BASEPATH/innobackupex ];then
+            /bin/cat >$BASEPATH/innobackupex <<EOF
 innobak_bin = /usr/bin/innobackupex
 parallel = 4
 throttle = 4
@@ -28,18 +29,14 @@ stream = xbstream
 extra_lsndir = /tmp
 hostname = developer-rhel6node1
 EOF
-
-    /bin/cat >$BASEPATH/db.properties <<EOF
-host = 127.0.0.1
-user = root
-socket = /var/lib/mysql/mysql.sock
-pass = k7e3h8q4
-port = 3306
-EOF
-
-else
-    /bin/mkdir -p $BASEPATH
-    /bin/cat >$BASEPATH/innobackupex <<EOF
+        else
+            echo "$BASEPATH/innobackupex exists.skip create it"
+        fi
+    else
+        echo "$BASEPATH not exists,create it."
+        mkdir -p $BASEPATH
+        if [ ! -f $BASEPATH/innobackupex ];then
+            /bin/cat >$BASEPATH/innobackupex <<EOF
 innobak_bin = /usr/bin/innobackupex
 parallel = 4
 throttle = 4
@@ -50,17 +47,42 @@ stream = xbstream
 extra_lsndir = /tmp
 hostname = developer-rhel6node1
 EOF
-
-    /bin/cat >$BASEPATH/db.properties <<EOF
-host = 127.0.0.1
-user = root
-socket = /var/lib/mysql/mysql.sock
-pass = k7e3h8q4
-port = 3306
-EOF
-
-fi
+        else
+            echo "$BASEPATH/innobackupex exists.skip create it"
+        fi
+    fi
 }
+
+function initialize_db_files () {
+    if [ -d $BASEPATH ];then
+        if [ ! -f $BASEPATH/db.properties ];then
+            /bin/cat >$BASEPATH/db.properties <<EOF
+host = 127.0.0.1
+user = root
+socket = /var/lib/mysql/mysql.sock
+pass = k7e3h8q4
+port = 3306
+EOF
+        else
+            echo "$BASEPATH/db.properties exists.skip create it"
+        fi
+    else
+        echo "$BASEPATH not exists,create it."
+        mkdir -p $BASEPATH
+        if [ ! -f $BASEPATH/db.properties ];then
+            /bin/cat >$BASEPATH/db.properties <<EOF
+host = 127.0.0.1
+user = root
+socket = /var/lib/mysql/mysql.sock
+pass = k7e3h8q4
+port = 3306
+EOF
+        else
+            echo "$BASEPATH/db.properties exists.skip create it"
+        fi
+    fi
+}
+
 
 function initialize_secure_file (){
     #如果加密文件不存在则创建
@@ -72,7 +94,8 @@ function initialize_secure_file (){
 }
 
 function main (){
-    initialize_files
+    initialize_innobak_files
+    initialize_db_files
     initialize_secure_file
     adaptive_cpus_number
     adaptive_hostname
