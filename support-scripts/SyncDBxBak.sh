@@ -47,14 +47,14 @@ function Main() {
 	
 	cd $BASEPATH
 	#Mount Filesystem.	
-	./NfsMount.sh 1
+	/usr/bin/NfsMount 1
 
 	sync_database_pbackup_files
 	sync_database_lbackup_files
 	
 	#Unmount Filesystem
 	cd $BASEPATH
-	./NfsMount.sh 0
+	/usr/bin/NfsMount 0
 }
 
 #main
