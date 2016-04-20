@@ -1,5 +1,5 @@
 Name:       ParateraDB-Utils	
-Version:    2.1.8
+Version:    2.1.9
 Release:	1%{?dist}
 Summary:	ParateraDB Utils Tools.
 
@@ -59,6 +59,7 @@ install -D -m 0755 $MBD/support-scripts/CompressDbxBak.sh $RBR/%{_bindir}/Compre
 install -D -m 0755 $MBD/support-scripts/NfsMount.sh $RBR/%{_bindir}/NfsMount
 install -D -m 0755 $MBD/support-scripts/RemoveDbxBak.sh $RBR/%{_bindir}/RemoveDbxBak
 install -D -m 0755 $MBD/support-scripts/SyncDBxBak.sh $RBR/%{_bindir}/SyncDBxBak
+install -D -m 0755 $MBD/support-scripts/LogicalBackup.sh $RBR/%{_bindir}/LogicalBackup
 install -D -m 0755 $MBD/support-scripts/pt-align $RBR/%{_bindir}/pt-align
 install -D -m 0755 $MBD/support-scripts/pt-archiver $RBR/%{_bindir}/pt-archiver
 install -D -m 0755 $MBD/support-scripts/pt-config-diff $RBR/%{_bindir}/pt-config-diff
@@ -104,6 +105,7 @@ cp -r $MBD/doc/man $RBR/%{_datadir}/
 %{_bindir}/DatabaseBackup
 %{_bindir}/NfsMount
 %{_bindir}/RemoveDbxBak
+%{_bindir}/LogicalBackup
 %{_bindir}/SyncDBxBak
 %{_bindir}/pdb
 %{_libdir}/libpdb_backup.so 
