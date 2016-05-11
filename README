@@ -1,7 +1,7 @@
-ParateraDB-Utils
+SparrowDB-Utils
 
 ---------------------------------
-    ParateraDB-Utils是ParateraDB数据库软件的增强工具包。此软件包的最终目标是为DBA提供一些便利的管理工具。
+    SparrowDB-Utils是SparrowDB数据库软件的增强工具包。此软件包的最终目标是为DBA提供一些便利的管理工具。
     包含如下内容：
 1.第一版本的数据库维护工具
 /usr/bin/CompressDbxBak  数据库备份压缩脚本
@@ -18,7 +18,9 @@ Usage:
 
 Sample:
  	pdb backup {all|db} {NULL|dbname} {full|incremental} {offline|online} [compress] {to 'path'} 备份数据库。并提供压缩、加密、完整和增量备份的功能。
+    #需要先安装xtrabackup
  	pdb restore {backup_id} [from 'path'] [into 'path'] 恢复数据库。
+    #需要先安装xtrabackup和qpress
  	pdb list history [backup|restore|archive_logs|event_schedule] [begin 'timestamp'] [end 'tiemstamp'] [detail] 列出一系列操作的历史信息。现阶段只支持查看备份操作的信息
  	pdb shell  进入到MySQL的shell环境。
  	
