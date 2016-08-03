@@ -1,7 +1,7 @@
-SparrowDB-Utils
+imSQL-Utils
 
 ---------------------------------
-    SparrowDB-Utils是SparrowDB数据库软件的增强工具包。此软件包的最终目标是为DBA提供一些便利的管理工具。
+    imSQL-Utils是imSQL数据库软件的增强工具包。此软件包的最终目标是为DBA提供一些便利的管理工具。
     包含如下内容：
 1.第一版本的数据库维护工具
 /usr/bin/CompressDbxBak  数据库备份压缩脚本
