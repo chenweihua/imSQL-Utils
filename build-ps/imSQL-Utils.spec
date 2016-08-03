@@ -1,11 +1,11 @@
-Name:       ParateraDB-Utils	
-Version:    2.1.10
+Name:       imSQL-Utils	
+Version:    2.1.11
 Release:	1%{?dist}
-Summary:	ParateraDB Utils Tools.
+Summary:	imSQL Utils Tools.
 
-Group:      Databases/ParateraDB	
+Group:      Databases/imSQL	
 License:    Copyright(c) 2015	
-URL:	    https://git.paratera.net/dba/ParateraDB-Utils	
+URL:	    https://git.paratera.net/dba/imSQL-Utils	
 Source0:    https://git.paratera.net/dba/%{name}.tar.gz	
 
 
@@ -22,12 +22,12 @@ AutoReq: no
 %global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(ReadKeyMini\\)$
 %global __requires_exclude %{?__requires_exclude:%__requires_exclude|}^perl\\(Transformers\\)$
 
-Requires:       mailx tar openssl grep coreutils procps shadow-utils perl time pigz ParateraDB-Backup /usr/bin/mysql
+Requires:       mailx tar openssl grep coreutils procps shadow-utils perl time pigz imSQL-Backup /usr/bin/mysql
 Requires:       perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
 Requires:       perl(DBD::mysql)
 
 %description
-    ParateraDB Utils Tools.
+    imSQL Utils Tools.
 
 %prep
 %setup -q -n %{name}
